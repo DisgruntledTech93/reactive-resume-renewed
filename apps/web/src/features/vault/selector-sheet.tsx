@@ -1,8 +1,6 @@
 import type { SectionType } from "@reactive-resume/schema/resume/data";
 import type { VaultItemType } from "@reactive-resume/schema/vault/data";
 import type { VaultItem } from "./types";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -78,7 +76,7 @@ export function VaultSelectorSheet({ open, onOpenChange, type, customSectionId, 
 			});
 		}
 		toast.success(
-			chosen.length === 1 ? t`Added one Vault block to this resume.` : t`Added ${chosen.length} Vault blocks to this resume.`,
+			chosen.length === 1 ? `Added one Vault block to this resume.` : `Added ${chosen.length} Vault blocks to this resume.`,
 		);
 		close();
 	};
@@ -94,10 +92,10 @@ export function VaultSelectorSheet({ open, onOpenChange, type, customSectionId, 
 			<SheetContent side="right" className="w-full gap-0 data-[side=right]:sm:max-w-xl">
 				<SheetHeader>
 					<SheetTitle>
-						<Trans>Add from Career Vault</Trans>
+						{"Add from Career Vault"}
 					</SheetTitle>
 					<SheetDescription>
-						<Trans>Select reusable {VAULT_TYPE_LABELS[type].toLowerCase()} blocks for this resume.</Trans>
+						{`Select reusable ${VAULT_TYPE_LABELS[type].toLowerCase()}blocks for this resume.`}
 					</SheetDescription>
 				</SheetHeader>
 
@@ -108,18 +106,18 @@ export function VaultSelectorSheet({ open, onOpenChange, type, customSectionId, 
 						</InputGroupAddon>
 						<InputGroupInput
 							value={search}
-							placeholder={t`Search Vault blocks...`}
+							placeholder={`Search Vault blocks...`}
 							onChange={(event) => setSearch(event.target.value)}
 						/>
 					</InputGroup>
 
 					<div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
-						{isLoading && <p className="py-8 text-center text-muted-foreground text-sm"><Trans>Loading Vault…</Trans></p>}
+						{isLoading && <p className="py-8 text-center text-muted-foreground text-sm">{"Loading Vault…"}</p>}
 						{!isLoading && filtered.length === 0 && (
 							<div className="rounded-xl border border-dashed p-8 text-center">
-								<p className="font-medium"><Trans>No matching Vault blocks</Trans></p>
+								<p className="font-medium">{"No matching Vault blocks"}</p>
 								<p className="mt-1 text-muted-foreground text-sm">
-									<Trans>Save an item from the resume builder or create one in Career Vault.</Trans>
+									{"Save an item from the resume builder or create one in Career Vault."}
 								</p>
 							</div>
 						)}
@@ -133,7 +131,7 @@ export function VaultSelectorSheet({ open, onOpenChange, type, customSectionId, 
 									<Checkbox
 										checked={checked}
 										onCheckedChange={() => toggle(item.id)}
-										aria-label={t`Select ${item.label}`}
+										aria-label={`Select ${item.label}`}
 									/>
 									<button type="button" className="min-w-0 flex-1 text-left" onClick={() => toggle(item.id)}>
 										<p className="truncate font-medium text-sm">{item.label}</p>
@@ -155,9 +153,9 @@ export function VaultSelectorSheet({ open, onOpenChange, type, customSectionId, 
 				</div>
 
 				<SheetFooter>
-					<Button variant="ghost" onClick={close}><Trans>Cancel</Trans></Button>
+					<Button variant="ghost" onClick={close}>{"Cancel"}</Button>
 					<Button disabled={selected.length === 0} onClick={addSelected}>
-						<Trans>Add Selected ({selected.length})</Trans>
+						{`Add Selected (${selected.length})`}
 					</Button>
 				</SheetFooter>
 			</SheetContent>

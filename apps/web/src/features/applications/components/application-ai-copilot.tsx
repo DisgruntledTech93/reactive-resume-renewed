@@ -1,6 +1,4 @@
 import type { Application } from "../types";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
 import {
 	ArrowsClockwiseIcon,
 	CaretRightIcon,
@@ -20,9 +18,9 @@ import { applicationsListQueryKey } from "../queries";
 
 // Score bands drive the ring color and the label — a job-fit gauge, not a generic percentage.
 function band(score: number) {
-	if (score >= 75) return { color: "#10b981", label: t`Strong fit` };
-	if (score >= 50) return { color: "#f59e0b", label: t`Worth a shot` };
-	return { color: "#f43f5e", label: t`A stretch` };
+	if (score >= 75) return { color: "#10b981", label: `Strong fit` };
+	if (score >= 50) return { color: "#f59e0b", label: `Worth a shot` };
+	return { color: "#f43f5e", label: `A stretch` };
 }
 
 function aiGaps(app: Application): string[] {
@@ -113,22 +111,22 @@ export function ApplicationAiCopilot({ application }: Props) {
 	const matchScore = useMutation(
 		orpc.applications.ai.matchScore.mutationOptions({
 			onSuccess: invalidate,
-			onError: (error) => toast.error(error.message || t`Match scoring failed.`),
+			onError: (error) => toast.error(error.message || `Match scoring failed.`),
 		}),
 	);
 	const tailorResume = useMutation(
 		orpc.applications.ai.tailorResume.mutationOptions({
 			onSuccess: (result) => {
 				invalidate();
-				toast.success(t`Created "${result.name}" and linked it to this application.`);
+				toast.success(`Created "${result.name}" and linked it to this application.`);
 			},
-			onError: (error) => toast.error(error.message || t`Tailoring failed.`),
+			onError: (error) => toast.error(error.message || `Tailoring failed.`),
 		}),
 	);
 	const draftMessage = useMutation(
 		orpc.applications.ai.draftMessage.mutationOptions({
 			onSuccess: (result, variables) => setDraft({ kind: variables.kind, text: result.text }),
-			onError: (error) => toast.error(error.message || t`Drafting failed.`),
+			onError: (error) => toast.error(error.message || `Drafting failed.`),
 		}),
 	);
 
@@ -144,7 +142,7 @@ export function ApplicationAiCopilot({ application }: Props) {
 					<SparkleIcon weight="fill" className="size-3" />
 				</span>
 				<span className="font-medium text-sm">
-					<Trans>Application Copilot</Trans>
+					{"Application Copilot"}
 				</span>
 			</header>
 
@@ -152,7 +150,7 @@ export function ApplicationAiCopilot({ application }: Props) {
 			<div className="px-3.5 py-3">
 				{!canScore ? (
 					<p className="rounded-lg bg-muted/50 p-2.5 text-muted-foreground text-xs">
-						<Trans>Link a resume and add a job description (Edit) to score your fit and tailor a copy.</Trans>
+						{"Link a resume and add a job description (Edit) to score your fit and tailor a copy."}
 					</p>
 				) : score == null ? (
 					<button
@@ -170,10 +168,10 @@ export function ApplicationAiCopilot({ application }: Props) {
 						</span>
 						<span>
 							<span className="block font-medium text-sm">
-								{matchScore.isPending ? <Trans>Scoring your fit…</Trans> : <Trans>Score my fit</Trans>}
+								{matchScore.isPending ? "Scoring your fit…" : "Score my fit"}
 							</span>
 							<span className="block text-muted-foreground text-xs">
-								<Trans>See how this resume matches the posting</Trans>
+								{"See how this resume matches the posting"}
 							</span>
 						</span>
 					</button>
@@ -193,14 +191,14 @@ export function ApplicationAiCopilot({ application }: Props) {
 									disabled={pending}
 									onClick={() => matchScore.mutate({ id: application.id })}
 									className="text-muted-foreground text-xs hover:text-foreground disabled:opacity-50"
-									title={t`Re-score`}
+									title={`Re-score`}
 								>
 									<ArrowsClockwiseIcon className={cn("size-3.5", matchScore.isPending && "animate-spin")} />
 								</button>
 							</div>
 							{gaps.length > 0 && (
 								<p className="mt-0.5 line-clamp-2 text-muted-foreground text-xs">
-									<Trans>Gaps:</Trans> {gaps.slice(0, 3).join(" · ")}
+									{"Gaps:"} {gaps.slice(0, 3).join(" · ")}
 								</p>
 							)}
 						</div>
@@ -211,23 +209,23 @@ export function ApplicationAiCopilot({ application }: Props) {
 			<div className="border-primary/10 border-t px-2 py-2">
 				<ActionRow
 					icon={<MagicWandIcon />}
-					title={<Trans>Tailor my resume</Trans>}
-					description={t`Build a job-specific copy from your Career Vault`}
+					title={"Tailor my resume"}
+					description={`Build a job-specific copy from your Career Vault`}
 					disabled={!canScore}
 					pending={tailorResume.isPending}
 					onClick={() => tailorResume.mutate({ id: application.id })}
 				/>
 				<ActionRow
 					icon={<EnvelopeSimpleIcon />}
-					title={<Trans>Draft a cover letter</Trans>}
-					description={t`From your resume and the posting`}
+					title={"Draft a cover letter"}
+					description={`From your resume and the posting`}
 					pending={draftMessage.isPending && draft?.kind !== "follow-up"}
 					onClick={() => draftMessage.mutate({ id: application.id, kind: "cover-letter" })}
 				/>
 				<ActionRow
 					icon={<PaperPlaneTiltIcon />}
-					title={<Trans>Draft a follow-up</Trans>}
-					description={t`A friendly nudge for the recruiter`}
+					title={"Draft a follow-up"}
+					description={`A friendly nudge for the recruiter`}
 					pending={draftMessage.isPending && draft?.kind === "follow-up"}
 					onClick={() => draftMessage.mutate({ id: application.id, kind: "follow-up" })}
 				/>
@@ -237,7 +235,7 @@ export function ApplicationAiCopilot({ application }: Props) {
 				<div className="border-primary/10 border-t bg-card/60 p-3">
 					<div className="mb-1.5 flex items-center justify-between">
 						<span className="font-medium text-xs">
-							{draft.kind === "cover-letter" ? <Trans>Cover letter draft</Trans> : <Trans>Follow-up draft</Trans>}
+							{draft.kind === "cover-letter" ? "Cover letter draft" : "Follow-up draft"}
 						</span>
 						<div className="flex gap-1">
 							<button
@@ -245,17 +243,17 @@ export function ApplicationAiCopilot({ application }: Props) {
 								className="inline-flex items-center gap-1 text-muted-foreground text-xs hover:text-foreground"
 								onClick={() => {
 									void navigator.clipboard.writeText(draft.text);
-									toast.success(t`Copied to clipboard.`);
+									toast.success(`Copied to clipboard.`);
 								}}
 							>
-								<CopyIcon className="size-3.5" /> <Trans>Copy</Trans>
+								<CopyIcon className="size-3.5" /> {"Copy"}
 							</button>
 							<button
 								type="button"
 								className="text-muted-foreground text-xs hover:text-foreground"
 								onClick={() => setDraft(null)}
 							>
-								<Trans>Dismiss</Trans>
+								{"Dismiss"}
 							</button>
 						</div>
 					</div>

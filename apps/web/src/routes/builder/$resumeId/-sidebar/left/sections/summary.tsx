@@ -1,5 +1,3 @@
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
 import { ArchiveIcon, PlusIcon } from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -21,9 +19,9 @@ export function SummarySectionBuilder() {
 		orpc.vault.create.mutationOptions({
 			onSuccess: () => {
 				void queryClient.invalidateQueries({ queryKey: orpc.vault.list.queryKey() });
-				toast.success(t`Summary saved to your Career Vault.`);
+				toast.success(`Summary saved to your Career Vault.`);
 			},
-			onError: (error) => toast.error(error.message || t`Couldn't save this summary.`),
+			onError: (error) => toast.error(error.message || `Couldn't save this summary.`),
 		}),
 	);
 
@@ -54,11 +52,11 @@ export function SummarySectionBuilder() {
 					}
 				>
 					<ArchiveIcon />
-					<Trans>Save to Vault</Trans>
+					{"Save to Vault"}
 				</Button>
 				<Button variant="ghost" className="rounded-none" onClick={() => setVaultOpen(true)}>
 					<PlusIcon />
-					<Trans>Use Vault Summary</Trans>
+					{"Use Vault Summary"}
 				</Button>
 			</div>
 			<VaultSelectorSheet open={vaultOpen} onOpenChange={setVaultOpen} type="summary" />
