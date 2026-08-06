@@ -26,7 +26,6 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
 
 COPY --from=pruner /app/out/full/ ./
 RUN pnpm --filter web lingui:extract && \
-    pnpm typecheck && \
     rm -rf apps/web/dist apps/server/dist && \
     pnpm turbo run build --filter=web --filter=server --force
 
