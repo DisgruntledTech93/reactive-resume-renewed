@@ -1,7 +1,5 @@
 import type { VaultItemType } from "@reactive-resume/schema/vault/data";
 import type { VaultMatch } from "./types";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
 import { ArrowLeftIcon, SparkleIcon } from "@phosphor-icons/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -93,18 +91,18 @@ export function TargetedResumeSheet({ open, onOpenChange }: Props) {
 				setSelected(suggestedIds(result));
 				setStep("select");
 			},
-			onError: (error) => toast.error(error.message || t`Couldn't analyze this job description.`),
+			onError: (error) => toast.error(error.message || `Couldn't analyze this job description.`),
 		}),
 	);
 	const create = useMutation(
 		orpc.vault.createResume.mutationOptions({
 			onSuccess: (result) => {
 				void queryClient.invalidateQueries({ queryKey: orpc.resume.list.queryKey() });
-				toast.success(t`Created "${result.name}" from your Career Vault.`);
+				toast.success(`Created "${result.name}" from your Career Vault.`);
 				close();
 				void navigate({ to: "/builder/$resumeId", params: { resumeId: result.id } });
 			},
-			onError: (error) => toast.error(error.message || t`Couldn't create the targeted resume.`),
+			onError: (error) => toast.error(error.message || `Couldn't create the targeted resume.`),
 		}),
 	);
 
@@ -130,17 +128,17 @@ export function TargetedResumeSheet({ open, onOpenChange }: Props) {
 				<SheetHeader>
 					<SheetTitle className="flex items-center gap-2">
 						{step === "select" && (
-							<Button size="icon" variant="ghost" onClick={() => setStep("setup")} aria-label={t`Back`}>
+							<Button size="icon" variant="ghost" onClick={() => setStep("setup")} aria-label={`Back`}>
 								<ArrowLeftIcon />
 							</Button>
 						)}
-						<Trans>Build a Targeted Resume</Trans>
+						{"Build a Targeted Resume"}
 					</SheetTitle>
 					<SheetDescription>
 						{step === "setup" ? (
-							<Trans>Match a job posting against your Vault, then choose the exact blocks to include.</Trans>
+							"Match a job posting against your Vault, then choose the exact blocks to include."
 						) : (
-							<Trans>Review the recommended blocks. The new resume receives independent copies you can tailor further.</Trans>
+							"Review the recommended blocks. The new resume receives independent copies you can tailor further."
 						)}
 					</SheetDescription>
 				</SheetHeader>
@@ -148,26 +146,26 @@ export function TargetedResumeSheet({ open, onOpenChange }: Props) {
 				{step === "setup" ? (
 					<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4">
 						<div className="space-y-1.5">
-							<Label><Trans>Resume Name</Trans></Label>
-							<Input value={name} placeholder={t`Example: WordPress Accessibility Specialist`} onChange={(event) => setName(event.target.value)} />
+							<Label>{"Resume Name"}</Label>
+							<Input value={name} placeholder={`Example: WordPress Accessibility Specialist`} onChange={(event) => setName(event.target.value)} />
 						</div>
 						<div className="space-y-1.5">
-							<Label><Trans>Base Resume / Template</Trans></Label>
+							<Label>{"Base Resume / Template"}</Label>
 							<Combobox
 								className="w-full"
 								showClear
 								value={baseResumeId}
 								options={resumeOptions}
-								placeholder={t`Optional: preserve a resume's design and contact details`}
+								placeholder={`Optional: preserve a resume's design and contact details`}
 								onValueChange={(value) => setBaseResumeId(value ?? "")}
 							/>
 						</div>
 						<div className="space-y-1.5">
-							<Label><Trans>Job Description</Trans></Label>
+							<Label>{"Job Description"}</Label>
 							<Textarea
 								className="min-h-72"
 								value={jobDescription}
-								placeholder={t`Paste the full job listing here...`}
+								placeholder={`Paste the full job listing here...`}
 								onChange={(event) => setJobDescription(event.target.value)}
 							/>
 						</div>
@@ -175,7 +173,7 @@ export function TargetedResumeSheet({ open, onOpenChange }: Props) {
 				) : (
 					<div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 pb-4">
 						<div className="rounded-xl border bg-muted/30 p-3 text-sm">
-							<strong>{selected.length}</strong> <Trans>blocks selected from</Trans> <strong>{matches.length}</strong> <Trans>matches.</Trans>
+							<strong>{selected.length}</strong> {"blocks selected from"} <strong>{matches.length}</strong> {"matches."}
 						</div>
 						{grouped.map(([type, results]) => (
 							<section key={type} className="space-y-2">
@@ -193,7 +191,7 @@ export function TargetedResumeSheet({ open, onOpenChange }: Props) {
 											);
 										}}
 									>
-										{results.every((result) => selected.includes(result.item.id)) ? <Trans>Clear</Trans> : <Trans>Select all</Trans>}
+										{results.every((result) => selected.includes(result.item.id)) ? "Clear" : "Select all"}
 									</Button>
 								</div>
 								{results.map((result) => {
@@ -208,7 +206,7 @@ export function TargetedResumeSheet({ open, onOpenChange }: Props) {
 											<Checkbox
 												checked={selected.includes(result.item.id)}
 												onCheckedChange={toggleResult}
-												aria-label={t`Select ${result.item.label}`}
+												aria-label={`Select ${result.item.label}`}
 											/>
 											<button type="button" className="min-w-0 flex-1 text-left" onClick={toggleResult}>
 												<div className="min-w-0">
@@ -223,7 +221,7 @@ export function TargetedResumeSheet({ open, onOpenChange }: Props) {
 													)}
 													{result.matchedKeywords.length > 0 && (
 														<p className="mt-2 text-muted-foreground text-xs">
-															<Trans>Matched:</Trans> {result.matchedKeywords.slice(0, 8).join(" · ")}
+															{"Matched:"} {result.matchedKeywords.slice(0, 8).join(" · ")}
 														</p>
 													)}
 												</div>
@@ -237,21 +235,21 @@ export function TargetedResumeSheet({ open, onOpenChange }: Props) {
 				)}
 
 				<SheetFooter>
-					<Button variant="ghost" onClick={close}><Trans>Cancel</Trans></Button>
+					<Button variant="ghost" onClick={close}>{"Cancel"}</Button>
 					{step === "setup" ? (
 						<Button
 							disabled={!name.trim() || jobDescription.trim().length < 20 || match.isPending}
 							onClick={() => match.mutate({ jobDescription: jobDescription.trim(), limit: 200 })}
 						>
 							<SparkleIcon />
-							{match.isPending ? <Trans>Analyzing…</Trans> : <Trans>Match My Vault</Trans>}
+							{match.isPending ? "Analyzing…" : "Match My Vault"}
 						</Button>
 					) : (
 						<Button
 							disabled={selected.length === 0 || create.isPending}
 							onClick={() => create.mutate({ name: name.trim(), baseResumeId: baseResumeId || null, itemIds: selected, tags: ["targeted"] })}
 						>
-							<Trans>Create Resume ({selected.length} blocks)</Trans>
+							{`Create Resume (${selected.length}blocks)`}
 						</Button>
 					)}
 				</SheetFooter>

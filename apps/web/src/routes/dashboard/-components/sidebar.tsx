@@ -1,7 +1,3 @@
-import type { MessageDescriptor } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react";
-import { Trans } from "@lingui/react/macro";
 import {
 	ArchiveIcon,
 	BrainIcon,
@@ -42,29 +38,29 @@ import { UserDropdownMenu } from "@/features/user/dropdown-menu";
 
 type SidebarItem = {
 	icon: React.ReactNode;
-	label: MessageDescriptor;
+	label: string;
 	href: React.ComponentProps<typeof Link>["to"];
 };
 
 const appSidebarItems = [
 	{
 		icon: <ReadCvLogoIcon />,
-		label: msg`Resumes`,
+		label: "Resumes",
 		href: "/dashboard/resumes",
 	},
 	{
 		icon: <BriefcaseIcon />,
-		label: msg`Applications`,
+		label: "Applications",
 		href: "/dashboard/applications",
 	},
 	{
 		icon: <ArchiveIcon />,
-		label: msg`Career Vault`,
+		label: "Career Vault",
 		href: "/dashboard/vault",
 	},
 	{
 		icon: <ChatCircleDotsIcon />,
-		label: msg`Agents`,
+		label: "Agents",
 		href: "/agent",
 	},
 ] as const satisfies SidebarItem[];
@@ -72,32 +68,32 @@ const appSidebarItems = [
 const settingsSidebarItems = [
 	{
 		icon: <UserCircleIcon />,
-		label: msg`Profile`,
+		label: "Profile",
 		href: "/dashboard/settings/profile",
 	},
 	{
 		icon: <GearSixIcon />,
-		label: msg`Preferences`,
+		label: "Preferences",
 		href: "/dashboard/settings/preferences",
 	},
 	{
 		icon: <ShieldCheckIcon />,
-		label: msg`Authentication`,
+		label: "Authentication",
 		href: "/dashboard/settings/authentication",
 	},
 	{
 		icon: <KeyIcon />,
-		label: msg`API Keys`,
+		label: "API Keys",
 		href: "/dashboard/settings/api-keys",
 	},
 	{
 		icon: <BrainIcon />,
-		label: msg`Integrations`,
+		label: "Integrations",
 		href: "/dashboard/settings/integrations",
 	},
 	{
 		icon: <WarningIcon />,
-		label: msg`Danger Zone`,
+		label: "Danger Zone",
 		href: "/dashboard/settings/danger-zone",
 	},
 ] as const satisfies SidebarItem[];
@@ -107,19 +103,17 @@ type SidebarItemListProps = {
 };
 
 function SidebarItemList({ items }: SidebarItemListProps) {
-	const { i18n } = useLingui();
-
 	return (
 		<SidebarMenu>
 			{items.map((item) => (
 				<SidebarMenuItem key={item.href}>
 					<SidebarMenuButton
-						title={i18n.t(item.label)}
+						title={item.label}
 						render={
 							<Link to={item.href} activeProps={{ className: "bg-sidebar-accent" }}>
 								{item.icon}
 								<span className="shrink-0 transition-[margin,opacity] duration-200 ease-in-out group-data-[collapsible=icon]:-ms-8 group-data-[collapsible=icon]:opacity-0">
-									{i18n.t(item.label)}
+									{item.label}
 								</span>
 							</Link>
 						}
@@ -134,7 +128,7 @@ function SidebarSearchButton() {
 	const { i18n } = useLingui();
 	const setOpen = useCommandPaletteStore((state) => state.setOpen);
 
-	const label = i18n.t(msg`Search`);
+	const label = "Search";
 
 	return (
 		<SidebarMenuItem>
@@ -175,10 +169,10 @@ export function DashboardSidebar() {
 
 			<SidebarSeparator />
 
-			<SidebarContent aria-label={i18n.t(msg`Dashboard`)} role="navigation">
+			<SidebarContent aria-label="Dashboard" role="navigation">
 				<SidebarGroup>
 					<SidebarGroupLabel>
-						<Trans>App</Trans>
+						{'App'}
 					</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarItemList items={appSidebarItems} />
@@ -187,7 +181,7 @@ export function DashboardSidebar() {
 
 				<SidebarGroup>
 					<SidebarGroupLabel>
-						<Trans>Settings</Trans>
+						{'Settings'}
 					</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarItemList items={settingsSidebarItems} />

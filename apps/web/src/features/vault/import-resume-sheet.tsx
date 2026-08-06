@@ -1,5 +1,3 @@
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -31,11 +29,11 @@ export function ImportResumeToVaultSheet({ open, onOpenChange }: Props) {
 			onSuccess: (result) => {
 				void queryClient.invalidateQueries({ queryKey: orpc.vault.list.queryKey() });
 				void queryClient.invalidateQueries({ queryKey: orpc.vault.tags.queryKey() });
-				toast.success(t`Imported ${result.imported} new blocks and refreshed ${result.updated} existing blocks.`);
+				toast.success(`Imported ${result.imported} new blocks and refreshed ${result.updated} existing blocks.`);
 				setResumeId("");
 				onOpenChange(false);
 			},
-			onError: (error) => toast.error(error.message || t`Couldn't import this resume.`),
+			onError: (error) => toast.error(error.message || `Couldn't import this resume.`),
 		}),
 	);
 
@@ -49,22 +47,22 @@ export function ImportResumeToVaultSheet({ open, onOpenChange }: Props) {
 		>
 			<SheetContent side="right" className="w-full data-[side=right]:sm:max-w-md">
 				<SheetHeader>
-					<SheetTitle><Trans>Import Resume into Vault</Trans></SheetTitle>
+					<SheetTitle>{"Import Resume into Vault"}</SheetTitle>
 					<SheetDescription>
-						<Trans>Copy every reusable section item into your Career Vault. Re-importing refreshes blocks from that resume.</Trans>
+						{"Copy every reusable section item into your Career Vault. Re-importing refreshes blocks from that resume."}
 					</SheetDescription>
 				</SheetHeader>
 				<div className="flex-1 space-y-2 px-4">
-					<Label><Trans>Resume</Trans></Label>
+					<Label>{"Resume"}</Label>
 					<Combobox
 						className="w-full"
 						value={resumeId}
 						options={options}
-						placeholder={t`Select a resume`}
+						placeholder={`Select a resume`}
 						onValueChange={(value) => setResumeId(value ?? "")}
 					/>
 					<p className="text-muted-foreground text-xs">
-						<Trans>Your original resume is not changed. Imported blocks stay editable in the Vault.</Trans>
+						{"Your original resume is not changed. Imported blocks stay editable in the Vault."}
 					</p>
 				</div>
 				<SheetFooter>
@@ -75,10 +73,10 @@ export function ImportResumeToVaultSheet({ open, onOpenChange }: Props) {
 							onOpenChange(false);
 						}}
 					>
-						<Trans>Cancel</Trans>
+						{"Cancel"}
 					</Button>
 					<Button disabled={!resumeId || importResume.isPending} onClick={() => importResume.mutate({ resumeId })}>
-						<Trans>Import Blocks</Trans>
+						{"Import Blocks"}
 					</Button>
 				</SheetFooter>
 			</SheetContent>

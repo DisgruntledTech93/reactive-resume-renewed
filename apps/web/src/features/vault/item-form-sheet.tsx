@@ -1,8 +1,6 @@
 import type { RoleItem } from "@reactive-resume/schema/resume/data";
 import type { VaultItemContent, VaultItemType } from "@reactive-resume/schema/vault/data";
 import type { VaultItem } from "./types";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
 import { PlusIcon, TrashSimpleIcon } from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useEffect, useState } from "react";
@@ -112,20 +110,20 @@ export function VaultItemFormSheet({
 		orpc.vault.create.mutationOptions({
 			onSuccess: () => {
 				invalidate();
-				toast.success(t`Saved to your Career Vault.`);
+				toast.success(`Saved to your Career Vault.`);
 				onOpenChange(false);
 			},
-			onError: (error) => toast.error(error.message || t`Couldn't save this Vault item.`),
+			onError: (error) => toast.error(error.message || `Couldn't save this Vault item.`),
 		}),
 	);
 	const update = useMutation(
 		orpc.vault.update.mutationOptions({
 			onSuccess: () => {
 				invalidate();
-				toast.success(t`Vault item updated.`);
+				toast.success(`Vault item updated.`);
 				onOpenChange(false);
 			},
-			onError: (error) => toast.error(error.message || t`Couldn't update this Vault item.`),
+			onError: (error) => toast.error(error.message || `Couldn't update this Vault item.`),
 		}),
 	);
 
@@ -147,7 +145,7 @@ export function VaultItemFormSheet({
 		try {
 			parseVaultItemContent(form.type, content);
 		} catch {
-			toast.error(t`Complete the required fields before saving this Vault block.`);
+			toast.error(`Complete the required fields before saving this Vault block.`);
 			return;
 		}
 
@@ -191,13 +189,13 @@ export function VaultItemFormSheet({
 		<div className="grid gap-3 rounded-lg border p-3 sm:col-span-2 sm:grid-cols-2">
 			<div className="space-y-1.5">
 				<Label>
-					<Trans>Website URL</Trans>
+					{"Website URL"}
 				</Label>
 				<Input value={stringValue(website.url)} onChange={(event) => setWebsiteField("url", event.target.value)} />
 			</div>
 			<div className="space-y-1.5">
 				<Label>
-					<Trans>Link Label</Trans>
+					{"Link Label"}
 				</Label>
 				<Input value={stringValue(website.label)} onChange={(event) => setWebsiteField("label", event.target.value)} />
 			</div>
@@ -207,7 +205,7 @@ export function VaultItemFormSheet({
 					onCheckedChange={(checked) => setWebsiteField("inlineLink", checked)}
 				/>
 				<Label>
-					<Trans>Show the link in the item title</Trans>
+					{"Show the link in the item title"}
 				</Label>
 			</div>
 		</div>
@@ -216,7 +214,7 @@ export function VaultItemFormSheet({
 	const keywordField = (key = "keywords") => (
 		<div className="space-y-1.5 sm:col-span-2">
 			<Label>
-				<Trans>Keywords</Trans>
+				{"Keywords"}
 			</Label>
 			<ChipInput value={stringArrayValue(content[key])} onChange={(value) => setContentField(key, value)} />
 		</div>
@@ -225,7 +223,7 @@ export function VaultItemFormSheet({
 	const levelField = () => (
 		<div className="space-y-1.5">
 			<Label>
-				<Trans>Level (0–5)</Trans>
+				{"Level (0–5)"}
 			</Label>
 			<Input
 				type="number"
@@ -249,9 +247,9 @@ export function VaultItemFormSheet({
 		<Sheet open={open} onOpenChange={onOpenChange}>
 			<SheetContent side="right" className="w-full gap-0 data-[side=right]:sm:max-w-2xl">
 				<SheetHeader>
-					<SheetTitle>{item ? <Trans>Edit Vault item</Trans> : <Trans>Add to Career Vault</Trans>}</SheetTitle>
+					<SheetTitle>{item ? "Edit Vault item" : "Add to Career Vault"}</SheetTitle>
 					<SheetDescription>
-						<Trans>Store one reusable career block. Resumes receive an editable snapshot of this content.</Trans>
+						{"Store one reusable career block. Resumes receive an editable snapshot of this content."}
 					</SheetDescription>
 				</SheetHeader>
 
@@ -259,7 +257,7 @@ export function VaultItemFormSheet({
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div className="space-y-1.5">
 							<Label>
-								<Trans>Block Type</Trans>
+								{"Block Type"}
 							</Label>
 							<Combobox
 								value={form.type}
@@ -273,11 +271,11 @@ export function VaultItemFormSheet({
 						</div>
 						<div className="space-y-1.5">
 							<Label>
-								<Trans>Vault Label</Trans>
+								{"Vault Label"}
 							</Label>
 							<Input
 								value={form.label}
-								placeholder={t`Optional friendly name`}
+								placeholder={`Optional friendly name`}
 								onChange={(event) => setForm((previous) => ({ ...previous, label: event.target.value }))}
 							/>
 						</div>
@@ -286,30 +284,30 @@ export function VaultItemFormSheet({
 					<div className="rounded-xl border bg-muted/20 p-4">
 						<p className="mb-4 font-medium text-sm">{VAULT_TYPE_LABELS[form.type]}</p>
 						<div className="grid gap-4 sm:grid-cols-2">
-							{form.type === "summary" && richField("content", <Trans>Summary</Trans>)}
+							{form.type === "summary" && richField("content", "Summary")}
 
 							{form.type === "profiles" && (
 								<>
-									{textField("network", <Trans>Network</Trans>)}
-									{textField("username", <Trans>Username</Trans>)}
+									{textField("network", "Network")}
+									{textField("username", "Username")}
 									{websiteFields()}
 								</>
 							)}
 
 							{form.type === "experience" && (
 								<>
-									{textField("company", <Trans>Company</Trans>)}
-									{textField("location", <Trans>Location</Trans>)}
-									{textField("position", <Trans>Position</Trans>)}
-									{textField("period", <Trans>Period</Trans>)}
+									{textField("company", "Company")}
+									{textField("location", "Location")}
+									{textField("position", "Position")}
+									{textField("period", "Period")}
 									{websiteFields()}
 									<div className="flex items-center justify-between sm:col-span-2">
 										<div>
 											<Label>
-												<Trans>Role Progression</Trans>
+												{"Role Progression"}
 											</Label>
 											<p className="text-muted-foreground text-xs">
-												<Trans>Use roles when you held multiple positions at the same company.</Trans>
+												{"Use roles when you held multiple positions at the same company."}
 											</p>
 										</div>
 										<Button
@@ -324,26 +322,26 @@ export function VaultItemFormSheet({
 											}
 										>
 											<PlusIcon />
-											<Trans>Add Role</Trans>
+											{"Add Role"}
 										</Button>
 									</div>
 									{roles.map((role, index) => (
 										<div key={role.id} className="grid gap-3 rounded-lg border p-3 sm:col-span-2 sm:grid-cols-2">
 											<div className="space-y-1.5">
 												<Label>
-													<Trans>Role</Trans>
+													{"Role"}
 												</Label>
 												<Input value={role.position} onChange={(event) => updateRole(index, "position", event.target.value)} />
 											</div>
 											<div className="space-y-1.5">
 												<Label>
-													<Trans>Period</Trans>
+													{"Period"}
 												</Label>
 												<Input value={role.period} onChange={(event) => updateRole(index, "period", event.target.value)} />
 											</div>
 											<div className="space-y-1.5 sm:col-span-2">
 												<Label>
-													<Trans>Description</Trans>
+													{"Description"}
 												</Label>
 												<RichInput value={role.description} onChange={(value) => updateRole(index, "description", value)} />
 											</div>
@@ -354,40 +352,40 @@ export function VaultItemFormSheet({
 												onClick={() => setContentField("roles", roles.filter((_, roleIndex) => roleIndex !== index))}
 											>
 												<TrashSimpleIcon />
-												<Trans>Remove Role</Trans>
+												{"Remove Role"}
 											</Button>
 										</div>
 									))}
-									{roles.length === 0 && richField("description", <Trans>Description</Trans>)}
+									{roles.length === 0 && richField("description", "Description")}
 								</>
 							)}
 
 							{form.type === "education" && (
 								<>
-									{textField("school", <Trans>School</Trans>)}
-									{textField("degree", <Trans>Degree</Trans>)}
-									{textField("area", <Trans>Area of Study</Trans>)}
-									{textField("grade", <Trans>Grade</Trans>)}
-									{textField("location", <Trans>Location</Trans>)}
-									{textField("period", <Trans>Period</Trans>)}
+									{textField("school", "School")}
+									{textField("degree", "Degree")}
+									{textField("area", "Area of Study")}
+									{textField("grade", "Grade")}
+									{textField("location", "Location")}
+									{textField("period", "Period")}
 									{websiteFields()}
-									{richField("description", <Trans>Description</Trans>)}
+									{richField("description", "Description")}
 								</>
 							)}
 
 							{form.type === "projects" && (
 								<>
-									{textField("name", <Trans>Project Name</Trans>)}
-									{textField("period", <Trans>Period</Trans>)}
+									{textField("name", "Project Name")}
+									{textField("period", "Period")}
 									{websiteFields()}
-									{richField("description", <Trans>Description</Trans>)}
+									{richField("description", "Description")}
 								</>
 							)}
 
 							{form.type === "skills" && (
 								<>
-									{textField("name", <Trans>Skill</Trans>)}
-									{textField("proficiency", <Trans>Proficiency</Trans>)}
+									{textField("name", "Skill")}
+									{textField("proficiency", "Proficiency")}
 									{levelField()}
 									{keywordField()}
 								</>
@@ -395,66 +393,66 @@ export function VaultItemFormSheet({
 
 							{form.type === "languages" && (
 								<>
-									{textField("language", <Trans>Language</Trans>)}
-									{textField("fluency", <Trans>Fluency</Trans>)}
+									{textField("language", "Language")}
+									{textField("fluency", "Fluency")}
 									{levelField()}
 								</>
 							)}
 
 							{form.type === "interests" && (
 								<>
-									{textField("name", <Trans>Interest</Trans>)}
+									{textField("name", "Interest")}
 									{keywordField()}
 								</>
 							)}
 
 							{form.type === "awards" && (
 								<>
-									{textField("title", <Trans>Award</Trans>)}
-									{textField("awarder", <Trans>Awarded By</Trans>)}
-									{textField("date", <Trans>Date</Trans>)}
+									{textField("title", "Award")}
+									{textField("awarder", "Awarded By")}
+									{textField("date", "Date")}
 									{websiteFields()}
-									{richField("description", <Trans>Description</Trans>)}
+									{richField("description", "Description")}
 								</>
 							)}
 
 							{form.type === "certifications" && (
 								<>
-									{textField("title", <Trans>Certification</Trans>)}
-									{textField("issuer", <Trans>Issuer</Trans>)}
-									{textField("date", <Trans>Date</Trans>)}
+									{textField("title", "Certification")}
+									{textField("issuer", "Issuer")}
+									{textField("date", "Date")}
 									{websiteFields()}
-									{richField("description", <Trans>Description</Trans>)}
+									{richField("description", "Description")}
 								</>
 							)}
 
 							{form.type === "publications" && (
 								<>
-									{textField("title", <Trans>Publication</Trans>)}
-									{textField("publisher", <Trans>Publisher</Trans>)}
-									{textField("date", <Trans>Date</Trans>)}
+									{textField("title", "Publication")}
+									{textField("publisher", "Publisher")}
+									{textField("date", "Date")}
 									{websiteFields()}
-									{richField("description", <Trans>Description</Trans>)}
+									{richField("description", "Description")}
 								</>
 							)}
 
 							{form.type === "volunteer" && (
 								<>
-									{textField("organization", <Trans>Organization</Trans>)}
-									{textField("location", <Trans>Location</Trans>)}
-									{textField("period", <Trans>Period</Trans>)}
+									{textField("organization", "Organization")}
+									{textField("location", "Location")}
+									{textField("period", "Period")}
 									{websiteFields()}
-									{richField("description", <Trans>Description</Trans>)}
+									{richField("description", "Description")}
 								</>
 							)}
 
 							{form.type === "references" && (
 								<>
-									{textField("name", <Trans>Name</Trans>)}
-									{textField("position", <Trans>Position</Trans>)}
-									{textField("phone", <Trans>Phone</Trans>)}
+									{textField("name", "Name")}
+									{textField("position", "Position")}
+									{textField("phone", "Phone")}
 									{websiteFields()}
-									{richField("description", <Trans>Description</Trans>)}
+									{richField("description", "Description")}
 								</>
 							)}
 						</div>
@@ -462,24 +460,24 @@ export function VaultItemFormSheet({
 
 					<div className="space-y-1.5">
 						<Label>
-							<Trans>Tags</Trans>
+							{"Tags"}
 						</Label>
 						<ChipInput
 							value={form.tags}
 							onChange={(value) => setForm((previous) => ({ ...previous, tags: value }))}
 						/>
 						<p className="text-muted-foreground text-xs">
-							<Trans>Add role, industry, technology, or accomplishment tags.</Trans>
+							{"Add role, industry, technology, or accomplishment tags."}
 						</p>
 					</div>
 
 					<div className="space-y-1.5">
 						<Label>
-							<Trans>Private Notes</Trans>
+							{"Private Notes"}
 						</Label>
 						<Textarea
 							value={form.notes}
-							placeholder={t`Evidence, metrics to verify, or reminders. These notes never appear on a resume.`}
+							placeholder={`Evidence, metrics to verify, or reminders. These notes never appear on a resume.`}
 							onChange={(event) => setForm((previous) => ({ ...previous, notes: event.target.value }))}
 						/>
 					</div>
@@ -487,10 +485,10 @@ export function VaultItemFormSheet({
 
 				<SheetFooter>
 					<Button variant="ghost" onClick={() => onOpenChange(false)}>
-						<Trans>Cancel</Trans>
+						{"Cancel"}
 					</Button>
 					<Button disabled={pending} onClick={submit}>
-						{item ? <Trans>Save Changes</Trans> : <Trans>Save to Vault</Trans>}
+						{item ? "Save Changes" : "Save to Vault"}
 					</Button>
 				</SheetFooter>
 			</SheetContent>

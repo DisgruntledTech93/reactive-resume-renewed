@@ -7,7 +7,6 @@ import type {
 import type { VaultItemType } from "@reactive-resume/schema/vault/data";
 import type { ButtonProps } from "@reactive-resume/ui/components/button";
 import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
 import {
 	ArchiveIcon,
 	ArrowBendUpRightIcon,
@@ -118,7 +117,7 @@ function MoveItemSubmenu({ type, item, customSectionId }: MoveItemSubmenuProps) 
 		<DropdownMenuSub>
 			<DropdownMenuSubTrigger>
 				<ArrowBendUpRightIcon />
-				<Trans>Move to</Trans>
+				{"Move to"}
 			</DropdownMenuSubTrigger>
 
 			<DropdownMenuSubContent>
@@ -127,7 +126,7 @@ function MoveItemSubmenu({ type, item, customSectionId }: MoveItemSubmenuProps) 
 					<DropdownMenuSub key={pageIndex}>
 						<DropdownMenuSubTrigger>
 							<FileIcon />
-							<Trans>Page {pageIndex + 1}</Trans>
+							{`Page ${pageIndex + 1}`}
 						</DropdownMenuSubTrigger>
 
 						<DropdownMenuSubContent>
@@ -144,7 +143,7 @@ function MoveItemSubmenu({ type, item, customSectionId }: MoveItemSubmenuProps) 
 							{/* Option to create a new section on this page */}
 							<DropdownMenuItem onClick={() => handleNewSectionOnPage(pageIndex)}>
 								<FolderPlusIcon />
-								<Trans>New Section</Trans>
+								{"New Section"}
 							</DropdownMenuItem>
 						</DropdownMenuSubContent>
 					</DropdownMenuSub>
@@ -155,7 +154,7 @@ function MoveItemSubmenu({ type, item, customSectionId }: MoveItemSubmenuProps) 
 				{/* Option to create a new page with a new section */}
 				<DropdownMenuItem onClick={handleNewPage}>
 					<PlusCircleIcon />
-					<Trans>New Page</Trans>
+					{"New Page"}
 				</DropdownMenuItem>
 			</DropdownMenuSubContent>
 		</DropdownMenuSub>
@@ -191,9 +190,9 @@ export function SectionItem<T extends CustomSectionItem | SectionItemType>({
 			onSuccess: () => {
 				void queryClient.invalidateQueries({ queryKey: orpc.vault.list.queryKey() });
 				void queryClient.invalidateQueries({ queryKey: orpc.vault.tags.queryKey() });
-				toast.success(t`Saved to your Career Vault.`);
+				toast.success(`Saved to your Career Vault.`);
 			},
-			onError: (error) => toast.error(error.message || t`Couldn't save this item to the Vault.`),
+			onError: (error) => toast.error(error.message || `Couldn't save this item to the Vault.`),
 		}),
 	);
 
@@ -240,7 +239,7 @@ export function SectionItem<T extends CustomSectionItem | SectionItemType>({
 	};
 
 	const onDelete = async () => {
-		const confirmed = await confirm(t`Are you sure you want to delete this item?`, {
+		const confirmed = await confirm(`Are you sure you want to delete this item?`, {
 			confirmText: t({
 				comment: "Destructive confirmation button label when deleting a section item in resume builder",
 				message: "Delete",
@@ -307,7 +306,7 @@ export function SectionItem<T extends CustomSectionItem | SectionItemType>({
 
 			<DropdownMenu>
 				<DropdownMenuTrigger
-					aria-label={t`Options for ${title}`}
+					aria-label={`Options for ${title}`}
 					className="flex cursor-context-menu items-center px-1.5 opacity-40 transition-[background-color,opacity] hover:bg-secondary/40 focus:outline-none focus-visible:ring-1 group-hover:opacity-100"
 				>
 					<DotsThreeVerticalIcon />
@@ -317,7 +316,7 @@ export function SectionItem<T extends CustomSectionItem | SectionItemType>({
 					<DropdownMenuGroup>
 						<DropdownMenuItem onClick={onToggleVisibility}>
 							{item.hidden ? <EyeIcon /> : <EyeClosedIcon />}
-							{item.hidden ? <Trans>Show</Trans> : <Trans>Hide</Trans>}
+							{item.hidden ? "Show" : "Hide"}
 						</DropdownMenuItem>
 					</DropdownMenuGroup>
 
@@ -326,18 +325,18 @@ export function SectionItem<T extends CustomSectionItem | SectionItemType>({
 					<DropdownMenuGroup>
 						<DropdownMenuItem onClick={onUpdate}>
 							<PencilSimpleLineIcon />
-							<Trans>Update</Trans>
+							{"Update"}
 						</DropdownMenuItem>
 
 						<DropdownMenuItem onClick={onDuplicate}>
 							<CopySimpleIcon />
-							<Trans>Duplicate</Trans>
+							{"Duplicate"}
 						</DropdownMenuItem>
 
 						{type !== "cover-letter" && (
 							<DropdownMenuItem onClick={onSaveToVault} disabled={saveToVault.isPending}>
 								<ArchiveIcon />
-								<Trans>Save to Career Vault</Trans>
+								{"Save to Career Vault"}
 							</DropdownMenuItem>
 						)}
 
@@ -349,7 +348,7 @@ export function SectionItem<T extends CustomSectionItem | SectionItemType>({
 					<DropdownMenuGroup>
 						<DropdownMenuItem variant="destructive" onClick={onDelete}>
 							<TrashSimpleIcon />
-							<Trans>Delete</Trans>
+							{"Delete"}
 						</DropdownMenuItem>
 					</DropdownMenuGroup>
 				</DropdownMenuContent>
@@ -403,7 +402,7 @@ export function SectionAddItemButton({ type, customSectionId, className, childre
 				</Button>
 				<Button variant="ghost" className="h-12 justify-start rounded-none" onClick={() => setVaultOpen(true)}>
 					<ArchiveIcon />
-					<Trans>Add from Vault</Trans>
+					{"Add from Vault"}
 				</Button>
 			</div>
 
