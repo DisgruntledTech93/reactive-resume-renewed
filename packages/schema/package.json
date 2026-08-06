@@ -9,7 +9,8 @@
 		"./resume/stylesheet": "./src/resume/stylesheet.ts",
 		"./resume/*": "./src/resume/*.ts",
 		"./schema.json": "./schema.json",
-		"./templates": "./src/templates.ts"
+		"./templates": "./src/templates.ts",
+		"./vault/*": "./src/vault/*.ts"
 	},
 	"scripts": {
 		"typecheck": "tsgo --noEmit",

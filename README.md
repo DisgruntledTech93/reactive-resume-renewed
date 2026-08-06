@@ -3,9 +3,9 @@
     <img src="apps/web/public/opengraph/banner.jpg" alt="Reactive Resume" />
   </a>
 
-  <h1>Reactive Resume</h1>
+  <h1>Reactive Resume Renewed</h1>
 
-  <p>Reactive Resume is a free and open-source resume builder that simplifies the process of creating, updating, and sharing your resume.</p>
+  <p>A self-hosted Reactive Resume fork with a reusable Career Vault and job-targeted resume assembly.</p>
 
   <p>
     <a href="https://rxresu.me"><strong>Get Started</strong></a>
@@ -14,9 +14,9 @@
   </p>
 
   <p>
-    <img src="https://img.shields.io/github/package-json/v/amruthpillai/reactive-resume?style=flat-square" alt="Reactive Resume Version">
-    <img src="https://img.shields.io/github/stars/amruthpillai/Reactive-Resume?style=flat-square" alt="GitHub Stars">
-    <img src="https://img.shields.io/github/license/amruthpillai/Reactive-Resume?style=flat-square" alt="License" />
+    <img src="https://img.shields.io/github/package-json/v/DisgruntledTech93/reactive-resume-renewed?style=flat-square" alt="Reactive Resume Version">
+    <img src="https://img.shields.io/github/stars/DisgruntledTech93/reactive-resume-renewed?style=flat-square" alt="GitHub Stars">
+    <img src="https://img.shields.io/github/license/DisgruntledTech93/reactive-resume-renewed?style=flat-square" alt="License" />
     <img src="https://img.shields.io/docker/pulls/amruthpillai/reactive-resume?style=flat-square" alt="Docker Pulls" />
     <a href="https://discord.gg/aSyA5ZSxpb"><img src="https://img.shields.io/discord/1173518977851473940?style=flat-square&label=discord" alt="Discord" /></a>
     <a href="https://crowdin.com/project/reactive-resume"><img src="https://badges.crowdin.net/reactive-resume/localized.svg?style=flat-square" alt="Crowdin" /></a>
@@ -46,6 +46,16 @@ Reactive Resume stays free, open-source, and independent because companies choos
 If your company would like to sponsor Reactive Resume, email [hello@amruthpillai.com](mailto:hello@amruthpillai.com).
 
 ## Features
+
+**Career Vault**
+
+- Reusable blocks for work history, projects, skills, education, credentials, summaries, and more
+- Import existing resumes into a searchable, tagged content library
+- Add selected Vault blocks to any compatible resume section as independent snapshots
+- Match a pasted job description against the Vault and assemble a targeted resume
+- Use the application AI copilot to select and truthfully tailor Vault content for a specific posting
+
+See [CAREER-VAULT.md](CAREER-VAULT.md) for the complete workflow and [DEPLOY-COREFORGE.md](DEPLOY-COREFORGE.md) for deployment.
 
 **Resume Building**
 
