@@ -6,6 +6,7 @@ import { authRouter } from "../features/auth/router";
 import { flagsRouter } from "../features/flags/router";
 import { resumeRouter } from "../features/resume/router";
 import { statisticsRouter } from "../features/statistics/router";
+import { vaultRouter } from "../features/vault/router";
 import { storageRouter } from "../features/storage/router";
 
 export default {
@@ -18,4 +19,5 @@ export default {
 	resume: resumeRouter,
 	statistics: statisticsRouter,
 	storage: storageRouter,
+	vault: vaultRouter,
 };

@@ -4,10 +4,12 @@ import type {
 	SectionItem as SectionItemType,
 	SectionType,
 } from "@reactive-resume/schema/resume/data";
+import type { VaultItemType } from "@reactive-resume/schema/vault/data";
 import type { ButtonProps } from "@reactive-resume/ui/components/button";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import {
+	ArchiveIcon,
 	ArrowBendUpRightIcon,
 	CopySimpleIcon,
 	DotsSixVerticalIcon,
@@ -21,8 +23,10 @@ import {
 	PlusIcon,
 	TrashSimpleIcon,
 } from "@phosphor-icons/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Reorder, useDragControls } from "motion/react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@reactive-resume/ui/components/button";
 import {
 	DropdownMenu,
@@ -38,6 +42,7 @@ import {
 import { cn } from "@reactive-resume/utils/style";
 import { useDialogStore } from "@/dialogs/store";
 import { useCurrentResume, useUpdateResumeData } from "@/features/resume/builder/draft";
+import { VaultSelectorSheet } from "@/features/vault/selector-sheet";
 import { useConfirm } from "@/hooks/use-confirm";
 import {
 	addItemToSection,
@@ -47,6 +52,7 @@ import {
 	getSourceSectionTitle,
 	removeItemFromSource,
 } from "@/libs/resume/move-item";
+import { orpc } from "@/libs/orpc/client";
 
 // ============================================================================
 // MoveItemSubmenu Component
@@ -179,6 +185,17 @@ export function SectionItem<T extends CustomSectionItem | SectionItemType>({
 	const controls = useDragControls();
 	const { openDialog } = useDialogStore();
 	const updateResumeData = useUpdateResumeData();
+	const queryClient = useQueryClient();
+	const saveToVault = useMutation(
+		orpc.vault.create.mutationOptions({
+			onSuccess: () => {
+				void queryClient.invalidateQueries({ queryKey: orpc.vault.list.queryKey() });
+				void queryClient.invalidateQueries({ queryKey: orpc.vault.tags.queryKey() });
+				toast.success(t`Saved to your Career Vault.`);
+			},
+			onError: (error) => toast.error(error.message || t`Couldn't save this item to the Vault.`),
+		}),
+	);
 
 	const onToggleVisibility = () => {
 		updateResumeData((draft) => {
@@ -207,6 +224,19 @@ export function SectionItem<T extends CustomSectionItem | SectionItemType>({
 	const onDuplicate = () => {
 		// Type assertion needed because TypeScript can't narrow the union type through template literals
 		openDialog(`resume.sections.${type}.create`, { item, customSectionId } as never);
+	};
+
+	const onSaveToVault = () => {
+		if (type === "cover-letter") return;
+		saveToVault.mutate({
+			type: type as VaultItemType,
+			label: title,
+			content: structuredClone(item) as never,
+			tags: [],
+			notes: null,
+			sourceResumeId: null,
+			sourceItemId: null,
+		});
 	};
 
 	const onDelete = async () => {
@@ -304,6 +334,13 @@ export function SectionItem<T extends CustomSectionItem | SectionItemType>({
 							<Trans>Duplicate</Trans>
 						</DropdownMenuItem>
 
+						{type !== "cover-letter" && (
+							<DropdownMenuItem onClick={onSaveToVault} disabled={saveToVault.isPending}>
+								<ArchiveIcon />
+								<Trans>Save to Career Vault</Trans>
+							</DropdownMenuItem>
+						)}
+
 						<MoveItemSubmenu type={type} item={item} customSectionId={customSectionId} />
 					</DropdownMenuGroup>
 
@@ -328,6 +365,7 @@ type AddButtonProps = Omit<ButtonProps, "type"> & {
 
 export function SectionAddItemButton({ type, customSectionId, className, children, ...props }: AddButtonProps) {
 	const { openDialog } = useDialogStore();
+	const [vaultOpen, setVaultOpen] = useState(false);
 
 	const handleAdd = () => {
 		if (type === "custom") {
@@ -337,15 +375,44 @@ export function SectionAddItemButton({ type, customSectionId, className, childre
 		}
 	};
 
+	if (type === "custom" || type === "cover-letter") {
+		return (
+			<Button
+				variant="ghost"
+				onClick={handleAdd}
+				className={cn("h-12 w-full justify-start rounded-t-none", className)}
+				{...props}
+			>
+				<PlusIcon />
+				{children}
+			</Button>
+		);
+	}
+
 	return (
-		<Button
-			variant="ghost"
-			onClick={handleAdd}
-			className={cn("h-12 w-full justify-start rounded-t-none", className)}
-			{...props}
-		>
-			<PlusIcon />
-			{children}
-		</Button>
+		<>
+			<div className="grid grid-cols-2 border-t">
+				<Button
+					variant="ghost"
+					onClick={handleAdd}
+					className={cn("h-12 justify-start rounded-none border-e", className)}
+					{...props}
+				>
+					<PlusIcon />
+					{children}
+				</Button>
+				<Button variant="ghost" className="h-12 justify-start rounded-none" onClick={() => setVaultOpen(true)}>
+					<ArchiveIcon />
+					<Trans>Add from Vault</Trans>
+				</Button>
+			</div>
+
+			<VaultSelectorSheet
+				open={vaultOpen}
+				onOpenChange={setVaultOpen}
+				type={type as VaultItemType}
+				{...(customSectionId ? { customSectionId } : {})}
+			/>
+		</>
 	);
 }

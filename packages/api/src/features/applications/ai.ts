@@ -12,6 +12,7 @@ import { aiRequestRateLimit } from "../../middleware/rate-limit";
 import { getModel } from "../ai/service";
 import { aiProvidersService } from "../ai-providers/service";
 import { resumeService } from "../resume/service";
+import { buildResumeDataFromVault, vaultService } from "../vault/service";
 import { applicationService } from "./service";
 
 const reserved = { tags: ["Applications", "AI"] } as const;
@@ -411,6 +412,15 @@ const matchScoreOutput = z.object({
 		.transform((a) => a.slice(0, 8)),
 });
 
+const vaultTailoringOutput = z.object({
+	summary: z.string().catch(""),
+	selectedItemIds: z.array(z.string()).catch([]).transform((items) => items.slice(0, 80)),
+	rewrites: z
+		.array(z.object({ id: z.string(), description: z.string() }))
+		.catch([])
+		.transform((items) => items.slice(0, 60)),
+});
+
 export const aiRouter = {
 	// Extract structured fields from a pasted job description or a posting URL.
 	autofill: protectedProcedure
@@ -501,7 +511,8 @@ export const aiRouter = {
 			return { text: await generatePlainText(model, prompt) };
 		}),
 
-	// Create a tailored copy of the linked resume (job-specific summary) and link it to the application.
+	// Build a tailored copy from the user's Career Vault when available. The linked resume
+	// supplies contact details, layout, and styling; Vault blocks supply reusable career content.
 	tailorResume: protectedProcedure
 		.route({
 			method: "POST",
@@ -515,40 +526,106 @@ export const aiRouter = {
 		.handler(async ({ context, input }) => {
 			const application = await applicationService.getById({ id: input.id, userId: context.user.id });
 			if (!application.resumeId)
-				throw new ORPCError("BAD_REQUEST", { message: "Link a resume to this application first." });
+				throw new ORPCError("BAD_REQUEST", { message: "Link a base resume to this application first." });
 			if (!application.jobDescription) {
 				throw new ORPCError("BAD_REQUEST", { message: "Add a job description (via Auto-fill or Edit) first." });
 			}
 
-			const [model, resume] = await Promise.all([
+			const [model, resume, vaultMatches] = await Promise.all([
 				resolveModel(context.user.id),
 				resumeService.getById({ id: application.resumeId, userId: context.user.id }),
+				vaultService.match({
+					userId: context.user.id,
+					jobDescription: application.jobDescription,
+					limit: 60,
+				}),
 			]);
 
-			const { summary } = await generateJson(
-				model,
-				`Rewrite this candidate's professional summary to target the job below. Return ONLY JSON { "summary": "<one to two sentence HTML paragraph, e.g. <p>…</p>>" }. Keep it truthful to the resume.\n\nRESUME:\n${JSON.stringify(resume.data)}\n\nJOB:\n${application.role} at ${application.company}\n${application.jobDescription}`,
-				z.object({ summary: z.string() }),
-			);
+			let tailoredData = structuredClone(resume.data);
+			let usedVault = false;
+
+			if (vaultMatches.length > 0) {
+				const compactVault = vaultMatches.map(({ item, score, matchedKeywords }) => ({
+					id: item.id,
+					type: item.type,
+					label: item.label,
+					tags: item.tags,
+					matchScore: score,
+					matchedKeywords,
+					facts: JSON.stringify(item.content).slice(0, 2500),
+				}));
+
+				const result = await generateJson(
+					model,
+					`Build a truthful, targeted resume from the candidate's Career Vault. Return ONLY JSON with:
+{
+  "summary": "<one concise HTML paragraph>",
+  "selectedItemIds": ["vault-id", ...],
+  "rewrites": [{ "id": "vault-id", "description": "<truthful HTML description tailored to the posting>" }]
+}
+
+Rules:
+- Select only Vault IDs provided below.
+- Choose the strongest relevant work, project, education, certification, skill, and other blocks.
+- Do not invent employers, duties, technologies, dates, credentials, metrics, or outcomes.
+- Prefer relevance over stuffing every block into the resume.
+- Preserve concrete facts from each selected block.
+- Rewrites are optional and only for blocks that already have a description field.
+- The summary must be supported by selected Vault content.
+
+TARGET JOB:
+${application.role} at ${application.company}
+${application.jobDescription}
+
+CAREER VAULT:
+${JSON.stringify(compactVault)}`,
+					vaultTailoringOutput,
+				);
+
+				const byId = new Map(vaultMatches.map(({ item }) => [item.id, item]));
+				const rewriteById = new Map(result.rewrites.map((rewrite) => [rewrite.id, rewrite.description]));
+				const selected = [...new Set(result.selectedItemIds)]
+					.map((id) => byId.get(id))
+					.filter((item): item is (typeof vaultMatches)[number]["item"] => item !== undefined);
+
+				if (selected.length > 0) {
+					const tailoredItems = selected.map((item) => {
+						const content = structuredClone(item.content) as Record<string, unknown>;
+						const description = rewriteById.get(item.id);
+						if (description && typeof content.description === "string") content.description = description;
+						return { type: item.type, content: content as typeof item.content };
+					});
+
+					tailoredData = buildResumeDataFromVault({ baseData: resume.data, items: tailoredItems });
+					if (result.summary.trim()) tailoredData.summary.content = result.summary;
+					usedVault = true;
+				}
+			}
+
+			if (!usedVault) {
+				const { summary } = await generateJson(
+					model,
+					`Rewrite this candidate's professional summary to target the job below. Return ONLY JSON { "summary": "<one to two sentence HTML paragraph>" }. Keep it truthful to the resume.\n\nRESUME:\n${JSON.stringify(resume.data)}\n\nJOB:\n${application.role} at ${application.company}\n${application.jobDescription}`,
+					z.object({ summary: z.string() }),
+				);
+				tailoredData.summary.content = summary;
+			}
 
 			const name = `Tailored — ${application.company} · ${application.role}`.slice(0, 60);
-			const tailoredData = { ...resume.data, summary: { ...resume.data.summary, content: summary } };
-
 			const newResumeId = await resumeService.create({
 				userId: context.user.id,
 				name,
 				slug: `${slugify(name)}-${generateId().slice(0, 6)}`,
-				tags: [...resume.tags, "tailored"],
+				tags: [...new Set([...resume.tags, "tailored", ...(usedVault ? ["vault"] : [])])],
 				data: tailoredData,
 				locale: context.locale,
 			});
 
-			// Point the application at the tailored copy and log it on the timeline.
 			await applicationService.update({ id: input.id, userId: context.user.id, resumeId: newResumeId });
 			await applicationService.addNote({
 				id: input.id,
 				userId: context.user.id,
-				text: `AI tailored a resume: ${name}`,
+				text: usedVault ? `AI built a targeted resume from Career Vault: ${name}` : `AI tailored a resume: ${name}`,
 			});
 
 			return { resumeId: newResumeId, name };

@@ -3,6 +3,7 @@ import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import {
+	ArchiveIcon,
 	BrainIcon,
 	BriefcaseIcon,
 	ChatCircleDotsIcon,
@@ -55,6 +56,11 @@ const appSidebarItems = [
 		icon: <BriefcaseIcon />,
 		label: msg`Applications`,
 		href: "/dashboard/applications",
+	},
+	{
+		icon: <ArchiveIcon />,
+		label: msg`Career Vault`,
+		href: "/dashboard/vault",
 	},
 	{
 		icon: <ChatCircleDotsIcon />,
