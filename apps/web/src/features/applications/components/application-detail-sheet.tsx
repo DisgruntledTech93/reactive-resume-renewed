@@ -33,6 +33,7 @@ import { useConfirm } from "@/hooks/use-confirm";
 import { orpc } from "@/libs/orpc/client";
 import { applicationsListQueryKey } from "../queries";
 import { ApplicationAiCopilot } from "./application-ai-copilot";
+import { ApplicationIntelligence } from "./application-intelligence";
 import { FileAttachmentField } from "./file-attachment-field";
 
 const stageIndex = (status: ApplicationStatus) => STAGES.findIndex((s) => s.value === status);
@@ -250,6 +251,7 @@ export function ApplicationDetailSheet({ application, onOpenChange, onEdit }: Pr
 					</Section>
 
 					{/* AI copilot — placed high so it's discoverable without scrolling past the timeline */}
+					<ApplicationIntelligence application={current} />
 					<ApplicationAiCopilot application={current} />
 
 					{/* contacts */}

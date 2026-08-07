@@ -1,7 +1,7 @@
 {
 	"name": "reactive-resume",
 	"description": "Reactive Resume Renewed adds a reusable Career Vault and job-targeted resume assembly to Reactive Resume.",
-	"version": "5.3.0-vault.1",
+	"version": "5.4.0-career-intelligence.1",
 	"private": true,
 	"license": "MIT",
 	"author": {

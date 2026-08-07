@@ -717,6 +717,9 @@ importers:
       '@reactive-resume/env':
         specifier: workspace:*
         version: link:../env
+      '@reactive-resume/import':
+        specifier: workspace:*
+        version: link:../import
       '@reactive-resume/pdf':
         specifier: workspace:*
         version: link:../pdf
@@ -753,6 +756,9 @@ importers:
       ollama-ai-provider-v2:
         specifier: ^4.0.1
         version: 4.0.1(ai@7.0.44(zod@4.4.3))(zod@4.4.3)
+      pdfjs-dist:
+        specifier: 6.2.108
+        version: 6.2.108
       react:
         specifier: ^19.2.8
         version: 19.2.8

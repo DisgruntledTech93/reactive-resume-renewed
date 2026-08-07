@@ -301,7 +301,7 @@ export function ApplicationFormSheet({ open, onOpenChange, application }: Props)
 								onChange={(value) => set("resumeFile", value)}
 							/>
 							<p className="text-[11px] text-muted-foreground">
-								<Trans>Linking a Reactive Resume enables AI match scoring and tailoring.</Trans>
+								{"Linking a Reactive Resume preserves its design and contact details for targeted Vault snapshots."}
 							</p>
 						</div>
 					</Field>
@@ -331,7 +331,7 @@ export function ApplicationFormSheet({ open, onOpenChange, application }: Props)
 						<Textarea
 							value={form.jobDescription}
 							rows={3}
-							placeholder={t`Paste the posting — powers AI match scoring and tailoring.`}
+							placeholder="Paste the posting — powers local match scoring and Vault recommendations."
 							onChange={(event) => set("jobDescription", event.target.value)}
 						/>
 					</Field>
