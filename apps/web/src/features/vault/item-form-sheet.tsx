@@ -1,9 +1,10 @@
 import type { RoleItem } from "@reactive-resume/schema/resume/data";
 import type { VaultItemContent, VaultItemType } from "@reactive-resume/schema/vault/data";
+import type { ReactNode } from "react";
 import type { VaultItem } from "./types";
 import { PlusIcon, TrashSimpleIcon } from "@phosphor-icons/react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { type ReactNode, useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { parseVaultItemContent } from "@reactive-resume/schema/vault/data";
 import { Button } from "@reactive-resume/ui/components/button";
@@ -19,10 +20,10 @@ import {
 } from "@reactive-resume/ui/components/sheet";
 import { Switch } from "@reactive-resume/ui/components/switch";
 import { Textarea } from "@reactive-resume/ui/components/textarea";
+import { generateId } from "@reactive-resume/utils/string";
 import { ChipInput } from "@/components/input/chip-input";
 import { RichInput } from "@/components/input/rich-input";
 import { Combobox } from "@/components/ui/combobox";
-import { generateId } from "@reactive-resume/utils/string";
 import { orpc } from "@/libs/orpc/client";
 import { VAULT_TYPE_LABELS, VAULT_TYPE_OPTIONS } from "./constants";
 import { createEmptyVaultContent, getVaultContentLabel } from "./utils";
@@ -31,6 +32,11 @@ const emptyForm = (type: VaultItemType = "experience") => ({
 	type,
 	label: "",
 	tags: [] as string[],
+	keywords: [] as string[],
+	technologies: [] as string[],
+	industries: [] as string[],
+	targetRoles: [] as string[],
+	importance: 3,
 	notes: "",
 	content: createEmptyVaultContent(type),
 });
@@ -52,11 +58,15 @@ function toForm(item: VaultItem): FormState {
 		type: item.type,
 		label: item.label,
 		tags: item.tags,
+		keywords: item.keywords,
+		technologies: item.technologies,
+		industries: item.industries,
+		targetRoles: item.targetRoles,
+		importance: item.importance,
 		notes: item.notes ?? "",
 		content: structuredClone(item.content),
 	};
 }
-
 
 function buildFormState(
 	item: VaultItem | null | undefined,
@@ -93,9 +103,7 @@ export function VaultItemFormSheet({
 	initialLabel,
 }: Props) {
 	const queryClient = useQueryClient();
-	const [form, setForm] = useState<FormState>(() =>
-		buildFormState(item, initialType, initialContent, initialLabel),
-	);
+	const [form, setForm] = useState<FormState>(() => buildFormState(item, initialType, initialContent, initialLabel));
 
 	useEffect(() => {
 		if (open) setForm(buildFormState(item, initialType, initialContent, initialLabel));
@@ -105,12 +113,15 @@ export function VaultItemFormSheet({
 		void queryClient.invalidateQueries({ queryKey: orpc.vault.list.queryKey() });
 		void queryClient.invalidateQueries({ queryKey: orpc.vault.tags.queryKey() });
 	};
+	const { data: versions } = useQuery(
+		orpc.vault.versions.queryOptions({ input: { id: item?.id ?? "new" }, enabled: open && !!item }),
+	);
 
 	const create = useMutation(
 		orpc.vault.create.mutationOptions({
 			onSuccess: () => {
 				invalidate();
-				toast.success(`Saved to your Career Vault.`);
+				toast.success("Saved to your Career Vault.");
 				onOpenChange(false);
 			},
 			onError: (error) => toast.error(error.message || `Couldn't save this Vault item.`),
@@ -120,10 +131,23 @@ export function VaultItemFormSheet({
 		orpc.vault.update.mutationOptions({
 			onSuccess: () => {
 				invalidate();
-				toast.success(`Vault item updated.`);
+				toast.success("Vault item updated.");
 				onOpenChange(false);
 			},
 			onError: (error) => toast.error(error.message || `Couldn't update this Vault item.`),
+		}),
+	);
+	const restore = useMutation(
+		orpc.vault.restoreVersion.mutationOptions({
+			onSuccess: () => {
+				invalidate();
+				if (item) {
+					void queryClient.invalidateQueries({ queryKey: orpc.vault.versions.queryKey({ input: { id: item.id } }) });
+				}
+				toast.success("Vault version restored as a new revision.");
+				onOpenChange(false);
+			},
+			onError: (error) => toast.error(error.message || "The selected version could not be restored."),
 		}),
 	);
 
@@ -145,7 +169,7 @@ export function VaultItemFormSheet({
 		try {
 			parseVaultItemContent(form.type, content);
 		} catch {
-			toast.error(`Complete the required fields before saving this Vault block.`);
+			toast.error("Complete the required fields before saving this Vault block.");
 			return;
 		}
 
@@ -155,7 +179,14 @@ export function VaultItemFormSheet({
 			label,
 			content,
 			tags: form.tags,
+			keywords: form.keywords,
+			technologies: form.technologies,
+			industries: form.industries,
+			targetRoles: form.targetRoles,
+			importance: form.importance,
 			notes: form.notes.trim() || null,
+			sourceType: item?.sourceType ?? ("manual" as const),
+			sourceName: item?.sourceName ?? null,
 			sourceResumeId: item?.sourceResumeId ?? null,
 			sourceItemId: item?.sourceItemId ?? null,
 		};
@@ -165,7 +196,7 @@ export function VaultItemFormSheet({
 
 	const content = form.content as ContentRecord;
 	const website = (content.website ?? {}) as ContentRecord;
-	const pending = create.isPending || update.isPending;
+	const pending = create.isPending || update.isPending || restore.isPending;
 
 	const textField = (key: string, label: ReactNode, placeholder?: string) => (
 		<div className="space-y-1.5">
@@ -188,15 +219,11 @@ export function VaultItemFormSheet({
 	const websiteFields = () => (
 		<div className="grid gap-3 rounded-lg border p-3 sm:col-span-2 sm:grid-cols-2">
 			<div className="space-y-1.5">
-				<Label>
-					{"Website URL"}
-				</Label>
+				<Label>{"Website URL"}</Label>
 				<Input value={stringValue(website.url)} onChange={(event) => setWebsiteField("url", event.target.value)} />
 			</div>
 			<div className="space-y-1.5">
-				<Label>
-					{"Link Label"}
-				</Label>
+				<Label>{"Link Label"}</Label>
 				<Input value={stringValue(website.label)} onChange={(event) => setWebsiteField("label", event.target.value)} />
 			</div>
 			<div className="flex items-center gap-2 sm:col-span-2">
@@ -204,27 +231,21 @@ export function VaultItemFormSheet({
 					checked={website.inlineLink === true}
 					onCheckedChange={(checked) => setWebsiteField("inlineLink", checked)}
 				/>
-				<Label>
-					{"Show the link in the item title"}
-				</Label>
+				<Label>{"Show the link in the item title"}</Label>
 			</div>
 		</div>
 	);
 
 	const keywordField = (key = "keywords") => (
 		<div className="space-y-1.5 sm:col-span-2">
-			<Label>
-				{"Keywords"}
-			</Label>
+			<Label>{"Keywords"}</Label>
 			<ChipInput value={stringArrayValue(content[key])} onChange={(value) => setContentField(key, value)} />
 		</div>
 	);
 
 	const levelField = () => (
 		<div className="space-y-1.5">
-			<Label>
-				{"Level (0–5)"}
-			</Label>
+			<Label>{"Level (0–5)"}</Label>
 			<Input
 				type="number"
 				min={0}
@@ -256,28 +277,93 @@ export function VaultItemFormSheet({
 				<div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4 [&>*]:shrink-0">
 					<div className="grid gap-4 sm:grid-cols-2">
 						<div className="space-y-1.5">
-							<Label>
-								{"Block Type"}
-							</Label>
+							<Label>{"Block Type"}</Label>
 							<Combobox
 								value={form.type}
 								options={VAULT_TYPE_OPTIONS}
 								onValueChange={(value) => {
 									if (!value || value === form.type) return;
 									const type = value as VaultItemType;
-									setForm({ ...emptyForm(type), tags: form.tags, notes: form.notes });
+									setForm({
+										...emptyForm(type),
+										tags: form.tags,
+										keywords: form.keywords,
+										technologies: form.technologies,
+										industries: form.industries,
+										targetRoles: form.targetRoles,
+										importance: form.importance,
+										notes: form.notes,
+									});
 								}}
 							/>
 						</div>
 						<div className="space-y-1.5">
-							<Label>
-								{"Vault Label"}
-							</Label>
+							<Label>{"Vault Label"}</Label>
 							<Input
 								value={form.label}
-								placeholder={`Optional friendly name`}
+								placeholder={"Optional friendly name"}
 								onChange={(event) => setForm((previous) => ({ ...previous, label: event.target.value }))}
 							/>
+						</div>
+					</div>
+
+					<div className="rounded-xl border p-4">
+						<div>
+							<h3 className="font-medium text-sm">Career Intelligence Metadata</h3>
+							<p className="text-muted-foreground text-xs">
+								Used by local application matching and ranked recommendations.
+							</p>
+						</div>
+						<div className="mt-4 grid gap-4 sm:grid-cols-2">
+							<div className="space-y-1.5 sm:col-span-2">
+								<Label>{"Keywords"}</Label>
+								<ChipInput
+									value={form.keywords}
+									onChange={(keywords) => setForm((previous) => ({ ...previous, keywords }))}
+								/>
+							</div>
+							<div className="space-y-1.5">
+								<Label>{"Technologies"}</Label>
+								<ChipInput
+									value={form.technologies}
+									onChange={(technologies) => setForm((previous) => ({ ...previous, technologies }))}
+								/>
+							</div>
+							<div className="space-y-1.5">
+								<Label>{"Industries"}</Label>
+								<ChipInput
+									value={form.industries}
+									onChange={(industries) => setForm((previous) => ({ ...previous, industries }))}
+								/>
+							</div>
+							<div className="space-y-1.5 sm:col-span-2">
+								<Label>{"Target Roles"}</Label>
+								<ChipInput
+									value={form.targetRoles}
+									onChange={(targetRoles) => setForm((previous) => ({ ...previous, targetRoles }))}
+								/>
+							</div>
+							<div className="space-y-1.5">
+								<Label>{"Importance (1-5)"}</Label>
+								<Input
+									type="number"
+									min={1}
+									max={5}
+									value={form.importance}
+									onChange={(event) =>
+										setForm((previous) => ({
+											...previous,
+											importance: Math.max(1, Math.min(5, Number(event.target.value))),
+										}))
+									}
+								/>
+							</div>
+							{item?.sourceName && (
+								<div className="space-y-1.5">
+									<Label>{"Source"}</Label>
+									<Input value={item.sourceName} readOnly />
+								</div>
+							)}
 						</div>
 					</div>
 
@@ -303,9 +389,7 @@ export function VaultItemFormSheet({
 									{websiteFields()}
 									<div className="flex items-center justify-between sm:col-span-2">
 										<div>
-											<Label>
-												{"Role Progression"}
-											</Label>
+											<Label>{"Role Progression"}</Label>
 											<p className="text-muted-foreground text-xs">
 												{"Use roles when you held multiple positions at the same company."}
 											</p>
@@ -328,28 +412,36 @@ export function VaultItemFormSheet({
 									{roles.map((role, index) => (
 										<div key={role.id} className="grid gap-3 rounded-lg border p-3 sm:col-span-2 sm:grid-cols-2">
 											<div className="space-y-1.5">
-												<Label>
-													{"Role"}
-												</Label>
-												<Input value={role.position} onChange={(event) => updateRole(index, "position", event.target.value)} />
+												<Label>{"Role"}</Label>
+												<Input
+													value={role.position}
+													onChange={(event) => updateRole(index, "position", event.target.value)}
+												/>
 											</div>
 											<div className="space-y-1.5">
-												<Label>
-													{"Period"}
-												</Label>
-												<Input value={role.period} onChange={(event) => updateRole(index, "period", event.target.value)} />
+												<Label>{"Period"}</Label>
+												<Input
+													value={role.period}
+													onChange={(event) => updateRole(index, "period", event.target.value)}
+												/>
 											</div>
 											<div className="space-y-1.5 sm:col-span-2">
-												<Label>
-													{"Description"}
-												</Label>
-												<RichInput value={role.description} onChange={(value) => updateRole(index, "description", value)} />
+												<Label>{"Description"}</Label>
+												<RichInput
+													value={role.description}
+													onChange={(value) => updateRole(index, "description", value)}
+												/>
 											</div>
 											<Button
 												type="button"
 												variant="ghost"
 												className="justify-self-start text-destructive hover:text-destructive sm:col-span-2"
-												onClick={() => setContentField("roles", roles.filter((_, roleIndex) => roleIndex !== index))}
+												onClick={() =>
+													setContentField(
+														"roles",
+														roles.filter((_, roleIndex) => roleIndex !== index),
+													)
+												}
 											>
 												<TrashSimpleIcon />
 												{"Remove Role"}
@@ -459,25 +551,47 @@ export function VaultItemFormSheet({
 					</div>
 
 					<div className="space-y-1.5">
-						<Label>
-							{"Tags"}
-						</Label>
-						<ChipInput
-							value={form.tags}
-							onChange={(value) => setForm((previous) => ({ ...previous, tags: value }))}
-						/>
-						<p className="text-muted-foreground text-xs">
-							{"Add role, industry, technology, or accomplishment tags."}
-						</p>
+						<Label>{"Tags"}</Label>
+						<ChipInput value={form.tags} onChange={(value) => setForm((previous) => ({ ...previous, tags: value }))} />
+						<p className="text-muted-foreground text-xs">{"Add role, industry, technology, or accomplishment tags."}</p>
 					</div>
 
+					{item && versions && versions.length > 0 && (
+						<div className="space-y-2 rounded-xl border p-4">
+							<div>
+								<h3 className="font-medium text-sm">Version History</h3>
+								<p className="text-muted-foreground text-xs">
+									Restoring creates a new version; existing history remains intact.
+								</p>
+							</div>
+							{versions.slice(0, 10).map((version) => (
+								<div
+									key={version.id}
+									className="flex items-center justify-between gap-3 rounded-lg bg-muted/40 p-2 text-sm"
+								>
+									<div>
+										<span className="font-medium">Version {version.version}</span>
+										<span className="ml-2 text-muted-foreground">{version.changeReason}</span>
+									</div>
+									<Button
+										type="button"
+										size="sm"
+										variant="outline"
+										disabled={version.version === item.version || restore.isPending}
+										onClick={() => restore.mutate({ id: item.id, versionId: version.id })}
+									>
+										{version.version === item.version ? "Current" : "Restore"}
+									</Button>
+								</div>
+							))}
+						</div>
+					)}
+
 					<div className="space-y-1.5">
-						<Label>
-							{"Private Notes"}
-						</Label>
+						<Label>{"Private Notes"}</Label>
 						<Textarea
 							value={form.notes}
-							placeholder={`Evidence, metrics to verify, or reminders. These notes never appear on a resume.`}
+							placeholder={"Evidence, metrics to verify, or reminders. These notes never appear on a resume."}
 							onChange={(event) => setForm((previous) => ({ ...previous, notes: event.target.value }))}
 						/>
 					</div>

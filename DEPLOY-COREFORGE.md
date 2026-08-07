@@ -34,7 +34,7 @@ The script:
 - recreates only the application container;
 - waits for the health check and prints logs if startup fails.
 
-PostgreSQL and Redis are not recreated. The new Vault migration runs automatically when the application starts.
+PostgreSQL and Redis are not recreated. The v5.4 Career Intelligence migration runs automatically when the application starts, preserving existing v5.3 Vault items while adding import, history, analysis, and resume-snapshot data.
 
 ## Verify
 

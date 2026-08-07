@@ -10,7 +10,6 @@ export const vaultRouter = {
 		.output(vaultDto.list.output)
 		.handler(({ input, context }) => vaultService.list({ userId: context.user.id, ...input })),
 
-
 	tags: protectedProcedure
 		.route({ method: "GET", path: "/vault/tags", tags: ["Vault"], operationId: "listVaultTags" })
 		.input(vaultDto.tags.input)
@@ -65,6 +64,75 @@ export const vaultRouter = {
 		.output(vaultDto.importFromResume.output)
 		.handler(({ input, context }) => vaultService.importFromResume({ userId: context.user.id, ...input })),
 
+	previewFileImport: protectedProcedure
+		.route({
+			method: "POST",
+			path: "/vault/imports/preview-file",
+			tags: ["Vault"],
+			operationId: "previewVaultFileImport",
+			spec: (current) => {
+				const requestBody = current.requestBody;
+				if (!requestBody || "$ref" in requestBody) return current;
+				const multipart = requestBody.content?.["multipart/form-data"];
+				return multipart
+					? { ...current, requestBody: { ...requestBody, content: { "multipart/form-data": multipart } } }
+					: current;
+			},
+		})
+		.input(vaultDto.previewFileImport.input)
+		.use(resumeMutationRateLimit)
+		.output(vaultDto.previewFileImport.output)
+		.handler(async ({ input, context }) =>
+			vaultService.previewFileImport({
+				userId: context.user.id,
+				fileName: input.file.name,
+				contentType: input.file.type,
+				data: new Uint8Array(await input.file.arrayBuffer()),
+			}),
+		),
+
+	previewResumeImport: protectedProcedure
+		.route({
+			method: "POST",
+			path: "/vault/imports/preview-resume",
+			tags: ["Vault"],
+			operationId: "previewVaultResumeImport",
+		})
+		.input(vaultDto.previewResumeImport.input)
+		.use(resumeMutationRateLimit)
+		.output(vaultDto.previewResumeImport.output)
+		.handler(({ input, context }) => vaultService.previewResumeImport({ userId: context.user.id, ...input })),
+
+	commitImport: protectedProcedure
+		.route({
+			method: "POST",
+			path: "/vault/imports/{importId}/commit",
+			tags: ["Vault"],
+			operationId: "commitVaultImport",
+		})
+		.input(vaultDto.commitImport.input)
+		.use(resumeMutationRateLimit)
+		.output(vaultDto.commitImport.output)
+		.handler(({ input, context }) => vaultService.commitImport({ userId: context.user.id, ...input })),
+
+	versions: protectedProcedure
+		.route({ method: "GET", path: "/vault/{id}/versions", tags: ["Vault"], operationId: "listVaultItemVersions" })
+		.input(vaultDto.versions.input)
+		.output(vaultDto.versions.output)
+		.handler(({ input, context }) => vaultService.versions({ userId: context.user.id, ...input })),
+
+	restoreVersion: protectedProcedure
+		.route({
+			method: "POST",
+			path: "/vault/{id}/versions/{versionId}/restore",
+			tags: ["Vault"],
+			operationId: "restoreVaultItemVersion",
+		})
+		.input(vaultDto.restoreVersion.input)
+		.use(resumeMutationRateLimit)
+		.output(vaultDto.restoreVersion.output)
+		.handler(({ input, context }) => vaultService.restoreVersion({ userId: context.user.id, ...input })),
+
 	match: protectedProcedure
 		.route({ method: "POST", path: "/vault/match", tags: ["Vault"], operationId: "matchVaultToJob" })
 		.input(vaultDto.match.input)
@@ -76,5 +144,24 @@ export const vaultRouter = {
 		.input(vaultDto.createResume.input)
 		.use(resumeMutationRateLimit)
 		.output(vaultDto.createResume.output)
-		.handler(({ input, context }) => vaultService.createResume({ userId: context.user.id, locale: context.locale, ...input })),
+		.handler(({ input, context }) =>
+			vaultService.createResume({ userId: context.user.id, locale: context.locale, ...input }),
+		),
+
+	exportPortable: protectedProcedure
+		.route({ method: "POST", path: "/vault/export", tags: ["Vault"], operationId: "exportCareerVault" })
+		.input(vaultDto.exportPortable.input)
+		.output(vaultDto.exportPortable.output)
+		.handler(({ input, context }) => vaultService.exportPortable({ userId: context.user.id, ...input })),
+
+	exportResumeData: protectedProcedure
+		.route({
+			method: "POST",
+			path: "/vault/export-resume-data",
+			tags: ["Vault"],
+			operationId: "exportCareerVaultResumeData",
+		})
+		.input(vaultDto.exportResumeData.input)
+		.output(vaultDto.exportResumeData.output)
+		.handler(({ input, context }) => vaultService.exportResumeData({ userId: context.user.id, ...input })),
 };

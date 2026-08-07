@@ -45,7 +45,7 @@ FROM node:${NODE_VERSION}-slim AS runtime
 LABEL maintainer="DisgruntledTech93"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.title="Reactive Resume Renewed"
-LABEL org.opencontainers.image.description="A self-hosted resume builder with a reusable Career Vault."
+LABEL org.opencontainers.image.description="A self-hosted resume builder with a reusable Career Vault and local Career Intelligence."
 LABEL org.opencontainers.image.vendor="DisgruntledTech93"
 LABEL org.opencontainers.image.url="https://rxresu.me"
 LABEL org.opencontainers.image.documentation="https://docs.rxresu.me"

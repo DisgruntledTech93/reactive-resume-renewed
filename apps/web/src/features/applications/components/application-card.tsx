@@ -1,6 +1,6 @@
 import type { Application } from "../types";
 import { Trans } from "@lingui/react/macro";
-import { FileTextIcon, MapPinIcon } from "@phosphor-icons/react";
+import { FileTextIcon, MapPinIcon, TargetIcon } from "@phosphor-icons/react";
 import { getInitials } from "@reactive-resume/utils/string";
 import { cn } from "@reactive-resume/utils/style";
 import { tileColor } from "../tile-color";
@@ -77,7 +77,7 @@ export function ApplicationCard({ application, onClick, onEdit, className, dragg
 				</div>
 			)}
 
-			{(application.resumeId || application.source) && (
+			{(application.resumeId || application.source || application.matchScore !== null) && (
 				<div className="mt-2.5 flex flex-wrap gap-1.5">
 					{application.resumeId && (
 						<span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 px-2 py-0.5 font-medium text-[11px] text-muted-foreground">
@@ -88,6 +88,11 @@ export function ApplicationCard({ application, onClick, onEdit, className, dragg
 					{application.source && (
 						<span className="inline-flex items-center rounded-md border border-border px-2 py-0.5 font-medium text-[11px] text-muted-foreground">
 							{application.source}
+						</span>
+					)}
+					{application.matchScore !== null && (
+						<span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5 font-medium text-[11px] text-primary">
+							<TargetIcon className="size-3" /> {application.matchScore}% Vault match
 						</span>
 					)}
 				</div>

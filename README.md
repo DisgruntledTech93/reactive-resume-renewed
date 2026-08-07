@@ -5,7 +5,7 @@
 
   <h1>Reactive Resume Renewed</h1>
 
-  <p>A self-hosted Reactive Resume fork with a reusable Career Vault and job-targeted resume assembly.</p>
+  <p>A self-hosted Reactive Resume fork with a reusable Career Vault and deterministic, local Career Intelligence.</p>
 
   <p>
     <a href="https://rxresu.me"><strong>Get Started</strong></a>
@@ -50,10 +50,14 @@ If your company would like to sponsor Reactive Resume, email [hello@amruthpillai
 **Career Vault**
 
 - Reusable blocks for work history, projects, skills, education, credentials, summaries, and more
-- Import existing resumes into a searchable, tagged content library
+- Review and import existing resumes from Reactive Resume JSON, PDF, DOCX, and TXT
+- Enrich blocks with keywords, technologies, industries, target roles, importance, source metadata, duplicate fingerprints, and version history
 - Add selected Vault blocks to any compatible resume section as independent snapshots
-- Match a pasted job description against the Vault and assemble a targeted resume
-- Use the application AI copilot to select and truthfully tailor Vault content for a specific posting
+- Analyze the saved Applications job description locally for match score, requirements, gaps, and ranked Vault recommendations
+- Create a targeted, version-snapshotted resume while preserving a chosen base resume's design and contact data
+- Export the Vault to JSON, Markdown, DOCX, or PDF
+
+Career Intelligence requires no AI provider, API key, or network service. Existing optional AI features remain separate.
 
 See [CAREER-VAULT.md](CAREER-VAULT.md) for the complete workflow and [DEPLOY-COREFORGE.md](DEPLOY-COREFORGE.md) for deployment.
 

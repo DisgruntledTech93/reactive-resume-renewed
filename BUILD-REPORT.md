@@ -1,36 +1,45 @@
-# Reactive Resume Renewed Build Report
+# Reactive Resume Renewed v5.4 Career Intelligence
 
-Release: `5.3.0-vault.1`
+Build: `5.4.0-career-intelligence.1`
 
-## Completed
+## Delivered
 
-- Added a user-scoped PostgreSQL Career Vault for summaries, profiles, work experience, education, projects, skills, languages, interests, awards, certifications, publications, volunteer work, and references.
-- Added Vault create, read, update, archive, restore, duplicate, delete, tag, search, filter, bulk, import, job-match, and resume-creation APIs.
-- Added a Career Vault dashboard with reusable block editing and private notes.
-- Added resume import with source-aware refresh behavior to prevent duplicate imports.
-- Added **Save to Career Vault** and **Add from Vault** controls to the resume builder.
-- Added job-description matching and targeted resume assembly with optional base-resume design preservation.
-- Updated application AI tailoring to select only real Vault blocks, create a new resume, and avoid mutating canonical Vault content.
-- Added migration `20260806174500_career_vault` and a matching Drizzle snapshot.
-- Added a GitHub Actions workflow that publishes an AMD64 image to `ghcr.io/disgruntledtech93/reactive-resume-renewed`.
-- Added a CoreForge deployment script that backs up PostgreSQL and the Compose file before replacing only the application container.
+- Deterministic, local application analysis using each saved Application job description. The analysis reports a weighted match score, matched requirements, missing keywords, and ranked Career Vault recommendations without an AI provider or API key.
+- Resume import preview and review for Reactive Resume JSON, PDF, DOCX, and TXT. Users select candidate blocks before committing them to the Vault, and duplicates are detected before save.
+- Enriched Vault metadata: keywords, technologies, industries, target roles, importance, source/import details, content fingerprints, and immutable item-version history with restore support.
+- Targeted resume generation from selected Vault recommendations. A chosen base resume supplies the design and contact data, while the exact selected Vault versions are stored in a resume snapshot.
+- Vault exports to portable JSON and Markdown, plus DOCX and PDF through the project's existing resume rendering architecture.
+- New schema, API routes, application and Vault UI, database migration, tests, deployment documentation, and Docker release metadata.
 
-## Validation performed
+## Database migration
 
-- Parsed every modified TypeScript and TSX file with TypeScript. No parser-level errors were found.
-- Parsed all changed JSON and workflow YAML files.
-- Validated the deployment script with `bash -n`.
-- Verified that the new migration snapshot links to the previous migration and differs only by the 21 expected Vault schema entries.
-- Verified API router, database schema export, dashboard navigation, and generated route-tree wiring.
-- Scanned source files for merge-conflict markers and changed files for trailing whitespace.
-- Tested the generated patch against a clean copy of the uploaded source with `git apply --check`.
+The migration at `migrations/20260806234922_rapid_hydra/` creates the import, version, application-analysis, and resume-snapshot tables; adds the new Vault columns and indexes; and backfills a version record for every existing v5.3 Vault item. Existing rows and resume data are retained.
 
-## Environment limitation
+The standard container startup migration command applies this automatically:
 
-A full `pnpm install`, monorepo typecheck, test run, and Docker build could not be executed in this sandbox because the uploaded archive did not include dependencies and outbound package-registry DNS is unavailable. The included GitHub Actions workflow performs the real Node 24 Docker build with the repository lockfile when the completed source is pushed to the fork.
+```text
+pnpm run db:migrate
+```
 
-## Deployment references
+## Validation completed
 
-- Feature guide: `CAREER-VAULT.md`
-- CoreForge deployment: `DEPLOY-COREFORGE.md`
-- Automated deployment script: `deployment/coreforge/deploy.sh`
+- Workspace type check: 18 packages passed.
+- Production build: `web` and `server` passed.
+- API unit tests: 39 files and 310 tests passed with test isolation; the PostgreSQL integration test was excluded because no database service is available in the packaging environment.
+- Career Intelligence focused tests: 5 tests passed.
+- Schema Vault tests: 3 tests passed.
+- Applications UI utility tests: 10 tests passed.
+- Workspace package-boundary validation: 932 files across 19 packages passed.
+- Formatting and static checks for all touched source files passed.
+- Migration generation completed successfully.
+
+The local Docker client could not connect to a Docker daemon in the packaging environment. The web and server production compilation steps used by the Dockerfile passed directly. GitHub should build the included Dockerfile and publish the image normally; CoreForge can then pull that image.
+
+## GitHub and CoreForge
+
+1. Commit and push this source tree to the GitHub repository.
+2. Build and publish the image with the existing Dockerfile and workflow.
+3. Point CoreForge at the new image tag and redeploy.
+4. Keep the existing PostgreSQL volume and environment settings. Startup migrations upgrade the v5.3 data in place.
+
+No AI service, new secret, or external parsing service is required for Career Intelligence.

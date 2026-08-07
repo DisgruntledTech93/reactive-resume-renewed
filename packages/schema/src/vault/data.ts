@@ -67,6 +67,33 @@ export const vaultItemContentSchema = z.union([
 
 export type VaultItemContent = z.infer<typeof vaultItemContentSchema>;
 
+export const vaultSourceTypeSchema = z.enum(["manual", "resume", "file", "generated"]);
+export type VaultSourceType = z.infer<typeof vaultSourceTypeSchema>;
+
+export const vaultImportFileTypeSchema = z.enum(["reactive-resume-json", "pdf", "docx", "txt"]);
+export type VaultImportFileType = z.infer<typeof vaultImportFileTypeSchema>;
+
+export const vaultItemMetadataSchema = z.object({
+	keywords: z.array(z.string().trim().min(1).max(80)).max(100).default([]),
+	technologies: z.array(z.string().trim().min(1).max(80)).max(100).default([]),
+	industries: z.array(z.string().trim().min(1).max(80)).max(50).default([]),
+	targetRoles: z.array(z.string().trim().min(1).max(120)).max(50).default([]),
+	importance: z.number().int().min(1).max(5).default(3),
+});
+
+export type VaultItemMetadata = z.infer<typeof vaultItemMetadataSchema>;
+
+export const vaultImportCandidateSchema = vaultItemMetadataSchema.extend({
+	id: z.string(),
+	type: vaultItemTypeSchema,
+	label: z.string().trim().min(1).max(160),
+	content: vaultItemContentSchema,
+	fingerprint: z.string(),
+	duplicateOfId: z.string().nullable().default(null),
+});
+
+export type VaultImportCandidate = z.infer<typeof vaultImportCandidateSchema>;
+
 export const vaultItemPayloadSchema = z.discriminatedUnion("type", [
 	z.object({ type: z.literal("summary"), content: summaryItemSchema }),
 	z.object({ type: z.literal("profiles"), content: profileItemSchema }),
