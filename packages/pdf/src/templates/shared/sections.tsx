@@ -187,6 +187,11 @@ const defaultSectionHeadingContainerStyle = {
 	columnGap: 4,
 } satisfies Style;
 
+// Keep headings attached to at least a small amount of the content that follows.
+// 24pt is roughly two body-text lines for the default typography and prevents
+// item/section headings from being stranded at the bottom of a page.
+const HEADER_MIN_PRESENCE_AHEAD = 24;
+
 const getSectionHeadingTextStyle = (...styles: StyleInput[]): Style[] =>
 	composeStyles(...styles).map(
 		({
@@ -336,7 +341,12 @@ const SectionShell = ({ sectionId, title, showHeading = true, children }: Sectio
 			<SemanticNodeKeyProvider nodeKey={sectionNodeKey}>
 				<View style={resolvedSectionStyle} {...flowProps}>
 					{showHeading && (
-						<Heading style={composeStyles(sectionHeadingStyle, sectionHeadingRuleStyle)}>{sectionTitle}</Heading>
+						<Heading
+							minPresenceAhead={HEADER_MIN_PRESENCE_AHEAD}
+							style={composeStyles(sectionHeadingStyle, sectionHeadingRuleStyle)}
+						>
+							{sectionTitle}
+						</Heading>
 					)}
 					{children}
 				</View>
@@ -351,6 +361,7 @@ const SectionShell = ({ sectionId, title, showHeading = true, children }: Sectio
 				{showHeading && sectionHeadingVisible && (
 					<View
 						{...resolvedPdfFlowProps(sectionHeadingResolved)}
+						minPresenceAhead={HEADER_MIN_PRESENCE_AHEAD}
 						style={composeStyles(
 							sectionHeadingStyle,
 							defaultSectionHeadingContainerStyle,
@@ -584,7 +595,11 @@ const InlineItemHeader = ({
 	];
 
 	return (
-		<View {...resolvedPdfFlowProps(resolved)} style={composeStyles(inlineItemHeaderStyle, resolved.style)}>
+		<View
+			{...resolvedPdfFlowProps(resolved)}
+			minPresenceAhead={HEADER_MIN_PRESENCE_AHEAD}
+			style={composeStyles(inlineItemHeaderStyle, resolved.style)}
+		>
 			{projectRenderedChildren(renderedChildKeys, parts)}
 		</View>
 	);
@@ -631,10 +646,11 @@ const SectionItemHeader = ({ children }: SectionItemHeaderProps) => {
 				return [cloneElement(inline, { nodeKey: itemHeaderNodeKey }), true];
 			}
 			if (node.type === View) {
-				const view = node as ReactElement<{ style?: StyleInput }>;
+				const view = node as ReactElement<{ style?: StyleInput; minPresenceAhead?: number | undefined }>;
 				return [
 					cloneElement(view, {
 						...resolvedPdfFlowProps(resolved),
+						minPresenceAhead: view.props.minPresenceAhead ?? HEADER_MIN_PRESENCE_AHEAD,
 						style: composeStyles(view.props.style, resolved.style),
 					}),
 					true,
@@ -658,7 +674,11 @@ const SectionItemHeader = ({ children }: SectionItemHeaderProps) => {
 
 	return (
 		<SemanticNodeKeyProvider nodeKey={itemHeaderNodeKey}>
-			<View {...resolvedPdfFlowProps(resolved)} style={composeStyles(sectionItemHeaderStyle, resolved.style)}>
+			<View
+				{...resolvedPdfFlowProps(resolved)}
+				minPresenceAhead={HEADER_MIN_PRESENCE_AHEAD}
+				style={composeStyles(sectionItemHeaderStyle, resolved.style)}
+			>
 				{children}
 			</View>
 		</SemanticNodeKeyProvider>

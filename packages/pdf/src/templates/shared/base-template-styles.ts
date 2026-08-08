@@ -93,10 +93,16 @@ export function createBaseTemplateStyles({
 		} satisfies Style,
 
 		richListItemRow: {
-			// Stays `row` for both LTR and RTL; the <li> renderer swaps DOM order for RTL.
+			// Keep list rows constrained to the printable column. Without an explicit
+			// width Yoga can size the row from its contents and let long bullets push
+			// beyond the page edge.
 			flexDirection: "row",
 			columnGap: metrics.gapX(1 / 3),
 			alignItems: "flex-start",
+			width: "100%",
+			maxWidth: "100%",
+			minWidth: 0,
+			flexShrink: 1,
 		} satisfies Style,
 
 		richListItemMarker: {
@@ -105,20 +111,33 @@ export function createBaseTemplateStyles({
 			width: metadata.typography.body.fontSize,
 			textAlign: r.listMarkerTextAlign,
 			alignSelf: "stretch",
-			flex: "initial",
+			flexShrink: 0,
 		} satisfies Style,
 
 		richListItemContent: {
+			// A zero flex-basis is important here: it makes the text consume only the
+			// space remaining after the marker instead of using its intrinsic width.
 			...bodyText,
-			flex: "initial",
+			flexBasis: 0,
+			flexGrow: 1,
+			flexShrink: 1,
+			minWidth: 0,
+			maxWidth: "100%",
 		} satisfies Style,
 
 		splitRow: {
+			// Split headers (company/location, title/date, etc.) must never grow wider
+			// than their containing column. flexWrap can then move the trailing value
+			// to the next line instead of allowing it to escape the page.
 			flexDirection: r.row,
 			flexWrap: "wrap",
 			alignItems: "flex-start",
 			justifyContent: "space-between",
 			columnGap: metrics.gapX(2 / 3),
+			width: "100%",
+			maxWidth: "100%",
+			minWidth: 0,
+			flexShrink: 1,
 		} satisfies Style,
 
 		alignEnd: { ...r.alignEnd } satisfies Style,
