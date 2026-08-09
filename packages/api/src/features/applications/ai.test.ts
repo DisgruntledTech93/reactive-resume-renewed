@@ -77,7 +77,7 @@ describe("fetchJobPostingText", () => {
 
 	it("rejects oversized pages before reading the body", async () => {
 		lookupMock.mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
-		mockRequestResponse(200, { "content-length": "200001", "content-type": "text/html" }, "ignored");
+		mockRequestResponse(200, { "content-length": "5000001", "content-type": "text/html" }, "ignored");
 
 		await expect(fetchJobPostingText("https://jobs.example/posting")).rejects.toMatchObject({ code: "BAD_REQUEST" });
 	});
@@ -124,6 +124,61 @@ describe("fetchJobPostingText", () => {
 
 		await expect(fetchJobPostingText("https://jobs.example/posting")).resolves.toBe("Senior Engineer");
 		expect(lookupResult).toEqual([{ address: "93.184.216.34", family: 4 }]);
+	});
+
+	it("extracts embedded Zoho Recruit job data", async () => {
+		lookupMock.mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
+
+		const jobs = JSON.stringify([
+			{
+				Salary: "$50-80/hr",
+				Remote_Job: true,
+				Posting_Title: "Freelance WordPress Developer -US",
+				Job_Description:
+					'<p>This is a remote position.</p><h2>Preferred</h2><p style="font-weight: 400">Experience with Elementor, JetEngine, Wordfence, WPCode, and Gravity Forms.</p>',
+				Work_Experience: "1-3 years",
+				Job_Type: "Project Based",
+				Job_Opening_Name: "Freelance WordPress Developer -US",
+				City: null,
+				State: null,
+				Country: null,
+			},
+		]);
+
+		const encodedJobs = jobs.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+
+		const body = `
+			<html>
+				<head>
+					<title>Insight Therapy Solutions - Freelance WordPress Developer -US - Remote Job</title>
+				</head>
+				<body>
+					<script>
+						var jobs = JSON.parse('${encodedJobs}');
+					</script>
+				</body>
+			</html>
+		`;
+
+		mockRequestResponse(
+			200,
+			{
+				"content-type": "text/html",
+				"content-length": "1785764",
+			},
+			body,
+		);
+
+		const posting = await fetchJobPostingText("https://jobs.example/posting");
+
+		expect(posting).toContain("Freelance WordPress Developer -US");
+		expect(posting).toContain("Salary: $50-80/hr");
+		expect(posting).toContain("Remote: Yes");
+		expect(posting).toContain("Job type: Project Based");
+		expect(posting).toContain("Experience: 1-3 years");
+		expect(posting).toContain("This is a remote position.");
+		expect(posting).toContain("Elementor");
+		expect(posting).toContain("Wordfence");
 	});
 
 	it("reads LinkedIn job URLs through the public guest endpoint", async () => {

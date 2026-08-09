@@ -16,7 +16,8 @@ import { buildResumeDataFromVault, vaultService } from "../vault/service";
 import { applicationService } from "./service";
 
 const reserved = { tags: ["Applications", "AI"] } as const;
-const MAX_JOB_POSTING_BYTES = 200_000;
+const MAX_JOB_POSTING_BYTES = 5_000_000;
+const MAX_JOB_POSTING_TEXT_CHARS = 8_000;
 const MAX_PASTED_JOB_DESCRIPTION_CHARS = 20_000;
 const JOB_POSTING_CONTENT_TYPES = ["text/html", "text/plain", "application/xhtml+xml", "application/xml", "text/xml"];
 const LINKEDIN_JOB_POSTING_URL = "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting";
@@ -131,6 +132,163 @@ async function assertPublicHttpUrl(url: string): Promise<{ parsed: URL; address:
 function headerValue(headers: IncomingHttpHeaders, name: string) {
 	const value = headers[name];
 	return Array.isArray(value) ? value[0] : value;
+}
+
+function decodeJavaScriptStringLiteral(value: string) {
+	let output = "";
+
+	for (let index = 0; index < value.length; index++) {
+		const character = value[index];
+
+		if (character !== "\\" || index + 1 >= value.length) {
+			output += character;
+			continue;
+		}
+
+		const next = value[++index];
+
+		if (next === "x") {
+			const hexadecimal = value.slice(index + 1, index + 3);
+
+			if (/^[0-9a-fA-F]{2}$/.test(hexadecimal)) {
+				output += String.fromCharCode(Number.parseInt(hexadecimal, 16));
+				index += 2;
+				continue;
+			}
+
+			output += "\\x";
+			continue;
+		}
+
+		if (next === "u") {
+			const hexadecimal = value.slice(index + 1, index + 5);
+
+			if (/^[0-9a-fA-F]{4}$/.test(hexadecimal)) {
+				output += String.fromCharCode(Number.parseInt(hexadecimal, 16));
+				index += 4;
+				continue;
+			}
+
+			output += "\\u";
+			continue;
+		}
+
+		switch (next) {
+			case "n": {
+				output += "\n";
+				break;
+			}
+			case "r": {
+				output += "\r";
+				break;
+			}
+			case "t": {
+				output += "\t";
+				break;
+			}
+			case "b": {
+				output += "\b";
+				break;
+			}
+			case "f": {
+				output += "\f";
+				break;
+			}
+			case "v": {
+				output += "\v";
+				break;
+			}
+			case "\n": {
+				break;
+			}
+			case "\r": {
+				if (value[index + 1] === "\n") index++;
+				break;
+			}
+			default: {
+				output += next;
+			}
+		}
+	}
+
+	return output;
+}
+
+function cleanEmbeddedJobHtml(html: string) {
+	const numericEntity = (value: string, radix: number) => {
+		const codePoint = Number.parseInt(value, radix);
+		return codePoint >= 0 && codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : "";
+	};
+
+	return html
+		.replace(/<\s*br\s*\/?>/gi, "\n")
+		.replace(/<\/(?:p|li|ul|ol|div|section|article|h[1-6])>/gi, "\n")
+		.replace(/<[^>]+>/g, " ")
+		.replace(/&lt;/g, "<")
+		.replace(/&gt;/g, ">")
+		.replace(/&quot;/g, '"')
+		.replace(/&#39;/g, "'")
+		.replace(/&nbsp;/g, " ")
+		.replace(/&#(\d+);/g, (_match, decimal: string) => numericEntity(decimal, 10))
+		.replace(/&#[xX]([0-9a-fA-F]+);/g, (_match, hexadecimal: string) => numericEntity(hexadecimal, 16))
+		.replace(/&amp;/g, "&")
+		.replace(/[ \t]+\n/g, "\n")
+		.replace(/\n{3,}/g, "\n\n")
+		.replace(/[ \t]{2,}/g, " ")
+		.trim();
+}
+
+function extractZohoJobPostingText(html: string) {
+	const jobsMatch = html.match(/\bvar\s+jobs\s*=\s*JSON\.parse\('((?:\\[\s\S]|[^'\\])*)'\);/i);
+	const encodedJobs = jobsMatch?.[1];
+
+	if (!encodedJobs) return null;
+
+	try {
+		const decodedJobs = decodeJavaScriptStringLiteral(encodedJobs);
+		const parsed = JSON.parse(decodedJobs) as unknown;
+
+		if (!Array.isArray(parsed)) return null;
+
+		const job = parsed.find((entry): entry is Record<string, unknown> => typeof entry === "object" && entry !== null);
+
+		if (!job) return null;
+
+		const stringValue = (key: string) => {
+			const value = job[key];
+			return typeof value === "string" ? value.trim() : "";
+		};
+
+		const pageTitleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+		const pageTitle = pageTitleMatch?.[1] ? cleanEmbeddedJobHtml(pageTitleMatch[1]) : "";
+
+		const title = stringValue("Posting_Title") || stringValue("Job_Opening_Name");
+		const salary = stringValue("Salary");
+		const jobType = stringValue("Job_Type");
+		const experience = stringValue("Work_Experience");
+		const description = stringValue("Job_Description");
+		const location = [stringValue("City"), stringValue("State"), stringValue("Country")].filter(Boolean).join(", ");
+
+		const remote = job.Remote_Job === true ? "Remote: Yes" : job.Remote_Job === false ? "Remote: No" : "";
+
+		const text = [
+			pageTitle ? `Page title: ${pageTitle}` : "",
+			title ? `Role: ${title}` : "",
+			salary ? `Salary: ${salary}` : "",
+			remote,
+			location ? `Location: ${location}` : "",
+			jobType ? `Job type: ${jobType}` : "",
+			experience ? `Experience: ${experience}` : "",
+			description ? `Job description:\n${cleanEmbeddedJobHtml(description)}` : "",
+		]
+			.filter(Boolean)
+			.join("\n\n")
+			.trim();
+
+		return text ? text.slice(0, MAX_JOB_POSTING_TEXT_CHARS) : null;
+	} catch {
+		return null;
+	}
 }
 
 async function readTextResponse(response: IncomingMessage) {
@@ -368,13 +526,17 @@ export async function fetchJobPostingText(url: string): Promise<string> {
 			});
 		}
 		const html = await readTextResponse(response);
+
+		const zohoPosting = extractZohoJobPostingText(html);
+		if (zohoPosting) return zohoPosting;
+
 		return html
 			.replace(/<script[\s\S]*?<\/script>/gi, " ")
 			.replace(/<style[\s\S]*?<\/style>/gi, " ")
 			.replace(/<[^>]+>/g, " ")
 			.replace(/\s+/g, " ")
 			.trim()
-			.slice(0, 8_000);
+			.slice(0, MAX_JOB_POSTING_TEXT_CHARS);
 	} catch (error) {
 		if (error instanceof ORPCError) throw error;
 		throw new ORPCError("BAD_REQUEST", { message: "Couldn't read the job posting. Paste the description instead." });
@@ -414,7 +576,10 @@ const matchScoreOutput = z.object({
 
 const vaultTailoringOutput = z.object({
 	summary: z.string().catch(""),
-	selectedItemIds: z.array(z.string()).catch([]).transform((items) => items.slice(0, 80)),
+	selectedItemIds: z
+		.array(z.string())
+		.catch([])
+		.transform((items) => items.slice(0, 80)),
 	rewrites: z
 		.array(z.object({ id: z.string(), description: z.string() }))
 		.catch([])
