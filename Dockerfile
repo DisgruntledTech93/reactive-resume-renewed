@@ -40,14 +40,14 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
 
 FROM node:${NODE_VERSION}-slim AS runtime
 
-LABEL maintainer="DisgruntledTech93"
+LABEL maintainer="amruthpillai"
 LABEL org.opencontainers.image.licenses="MIT"
-LABEL org.opencontainers.image.title="Reactive Resume Renewed"
-LABEL org.opencontainers.image.description="A self-hosted resume builder with a reusable Career Vault and local Career Intelligence."
-LABEL org.opencontainers.image.vendor="DisgruntledTech93"
+LABEL org.opencontainers.image.title="Reactive Resume"
+LABEL org.opencontainers.image.description="A free and open-source resume builder."
+LABEL org.opencontainers.image.vendor="Amruth Pillai"
 LABEL org.opencontainers.image.url="https://rxresu.me"
 LABEL org.opencontainers.image.documentation="https://docs.rxresu.me"
-LABEL org.opencontainers.image.source="https://github.com/DisgruntledTech93/reactive-resume-renewed"
+LABEL org.opencontainers.image.source="https://github.com/amruthpillai/reactive-resume"
 
 ENV NODE_ENV="production" \
     PORT=3000 \

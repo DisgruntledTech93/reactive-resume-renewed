@@ -125,7 +125,6 @@ function SidebarItemList({ items }: SidebarItemListProps) {
 }
 
 function SidebarSearchButton() {
-	const { i18n } = useLingui();
 	const setOpen = useCommandPaletteStore((state) => state.setOpen);
 
 	const label = "Search";
@@ -144,7 +143,6 @@ function SidebarSearchButton() {
 }
 
 export function DashboardSidebar() {
-	const { i18n } = useLingui();
 	const { state } = useSidebarState();
 
 	return (
