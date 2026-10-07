@@ -54,6 +54,105 @@ export type PagePosting = {
 
 const asText = (value: unknown): string => (typeof value === "string" ? value.trim() : "");
 
+function decodeJavaScriptStringLiteral(value: string) {
+	let output = "";
+	for (let index = 0; index < value.length; index++) {
+		const character = value[index];
+		if (character !== "\\" || index + 1 >= value.length) {
+			output += character;
+			continue;
+		}
+		const next = value[++index];
+		if (next === "x") {
+			const hexadecimal = value.slice(index + 1, index + 3);
+			if (/^[0-9a-fA-F]{2}$/.test(hexadecimal)) {
+				output += String.fromCharCode(Number.parseInt(hexadecimal, 16));
+				index += 2;
+				continue;
+			}
+			output += "\\x";
+			continue;
+		}
+		if (next === "u") {
+			const hexadecimal = value.slice(index + 1, index + 5);
+			if (/^[0-9a-fA-F]{4}$/.test(hexadecimal)) {
+				output += String.fromCharCode(Number.parseInt(hexadecimal, 16));
+				index += 4;
+				continue;
+			}
+			output += "\\u";
+			continue;
+		}
+		switch (next) {
+			case "n": output += "\n"; break;
+			case "r": output += "\r"; break;
+			case "t": output += "\t"; break;
+			case "b": output += "\b"; break;
+			case "f": output += "\f"; break;
+			case "v": output += "\v"; break;
+			case "\n": break;
+			case "\r":
+				if (value[index + 1] === "\n") index++;
+				break;
+			default: output += next;
+		}
+	}
+	return output;
+}
+
+function cleanEmbeddedJobHtml(html: string) {
+	return htmlToText(
+		html
+			.replace(/<\s*br\s*\/?>/gi, "\n")
+			.replace(/<\/(?:p|li|ul|ol|div|section|article|h[1-6])>/gi, "\n"),
+	)
+		.replace(/[ \t]+\n/g, "\n")
+		.replace(/\n{3,}/g, "\n\n")
+		.trim();
+}
+
+function readZohoJobPosting(html: string): PagePosting | null {
+	const jobsMatch = html.match(/\bvar\s+jobs\s*=\s*JSON\.parse\('((?:\\[\s\S]|[^'\\])*)'\);/i);
+	const encodedJobs = jobsMatch?.[1];
+	if (!encodedJobs) return null;
+
+	try {
+		const parsed = JSON.parse(decodeJavaScriptStringLiteral(encodedJobs)) as unknown;
+		if (!Array.isArray(parsed)) return null;
+		const job = parsed.find((entry): entry is Record<string, unknown> => typeof entry === "object" && entry !== null);
+		if (!job) return null;
+
+		const stringValue = (key: string) => {
+			const value = job[key];
+			return typeof value === "string" ? value.trim() : "";
+		};
+		const role = stringValue("Posting_Title") || stringValue("Job_Opening_Name");
+		const location = [stringValue("City"), stringValue("State"), stringValue("Country")].filter(Boolean).join(", ");
+		const salary = stringValue("Salary");
+		const jobType = stringValue("Job_Type");
+		const experience = stringValue("Work_Experience");
+		const description = stringValue("Job_Description");
+		const remote = job.Remote_Job === true ? "Remote: Yes" : job.Remote_Job === false ? "Remote: No" : "";
+
+		const details = [
+			salary ? \`Salary: \${salary}\` : "",
+			remote,
+			location ? \`Location: \${location}\` : "",
+			jobType ? \`Job type: \${jobType}\` : "",
+			experience ? \`Experience: \${experience}\` : "",
+			description ? cleanEmbeddedJobHtml(description) : "",
+		]
+			.filter(Boolean)
+			.join("\n\n")
+			.trim();
+
+		return { role, company: "", location, description: details };
+	} catch {
+		return null;
+	}
+}
+
+
 function readLocation(value: unknown): string {
 	const place = (Array.isArray(value) ? value[0] : value) as { address?: Record<string, unknown> } | undefined;
 	const address = place?.address;
@@ -69,6 +168,9 @@ function readLocation(value: unknown): string {
  * hiring organisation, location and the description as text.
  */
 export function readJobPosting(html: string): PagePosting | null {
+	const zoho = readZohoJobPosting(html);
+	if (zoho) return zoho;
+
 	for (const match of html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
 		let json: unknown;
 		try {
