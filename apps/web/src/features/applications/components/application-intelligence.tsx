@@ -66,19 +66,19 @@ export function ApplicationIntelligence({ application }: Props) {
 	};
 
 	return (
-		<section className="space-y-3 rounded-xl border bg-muted/20 p-4">
+		<section className="space-y-3 rounded-xl border bg-sunken/40 p-4">
 			<div className="flex items-start justify-between gap-3">
 				<div>
 					<div className="flex items-center gap-2 font-semibold text-sm">
 						<TargetIcon /> Career Intelligence
 					</div>
-					<p className="mt-1 text-muted-foreground text-xs">
+					<p className="mt-1 text-ink-3 text-xs">
 						Deterministic keyword analysis using this application's saved job description. No AI or API key is used.
 					</p>
 				</div>
 				<Button
 					size="sm"
-					variant={analysis ? "outline" : "default"}
+					variant={analysis ? "secondary" : "primary"}
 					disabled={!application.jobDescription?.trim() || analyze.isPending}
 					onClick={() => analyze.mutate({ applicationId: application.id })}
 				>
@@ -87,7 +87,7 @@ export function ApplicationIntelligence({ application }: Props) {
 			</div>
 
 			{!application.jobDescription?.trim() && (
-				<p className="rounded-lg border border-dashed p-3 text-muted-foreground text-sm">
+				<p className="rounded-lg border border-dashed p-3 text-ink-3 text-sm">
 					Add the job description to this application to enable local matching.
 				</p>
 			)}
@@ -95,9 +95,9 @@ export function ApplicationIntelligence({ application }: Props) {
 			{analysis && (
 				<>
 					<div className="grid gap-3 sm:grid-cols-[100px_1fr]">
-						<div className="flex flex-col items-center justify-center rounded-xl border bg-background p-3">
+						<div className="flex flex-col items-center justify-center rounded-xl border bg-surface p-3">
 							<span className="font-bold text-3xl">{analysis.score}%</span>
-							<span className="text-muted-foreground text-xs">Vault match</span>
+							<span className="text-ink-3 text-xs">Vault match</span>
 						</div>
 						<div className="space-y-2">
 							<div>
@@ -112,7 +112,7 @@ export function ApplicationIntelligence({ application }: Props) {
 											</Badge>
 										))
 									) : (
-										<span className="text-muted-foreground text-xs">No direct matches yet.</span>
+										<span className="text-ink-3 text-xs">No direct matches yet.</span>
 									)}
 								</div>
 							</div>
@@ -128,7 +128,7 @@ export function ApplicationIntelligence({ application }: Props) {
 											</Badge>
 										))
 									) : (
-										<span className="text-muted-foreground text-xs">No gaps detected.</span>
+										<span className="text-ink-3 text-xs">No gaps detected.</span>
 									)}
 								</div>
 							</div>
@@ -138,14 +138,14 @@ export function ApplicationIntelligence({ application }: Props) {
 					<div className="space-y-2">
 						<div className="font-medium text-xs uppercase tracking-wide">Ranked Vault Recommendations</div>
 						{analysis.recommendations.length === 0 ? (
-							<p className="text-muted-foreground text-sm">
+							<p className="text-ink-3 text-sm">
 								No matching Vault blocks were found. Add relevant keywords or technologies to your Vault items.
 							</p>
 						) : (
 							analysis.recommendations.slice(0, 20).map((item) => (
 								<div
 									key={item.vaultItemId}
-									className="flex cursor-pointer items-start gap-3 rounded-lg border bg-background p-2.5"
+									className="flex cursor-pointer items-start gap-3 rounded-lg border bg-surface p-2.5"
 								>
 									<Checkbox checked={selected.has(item.vaultItemId)} onCheckedChange={() => toggle(item.vaultItemId)} />
 									<div className="min-w-0 flex-1">
@@ -153,7 +153,7 @@ export function ApplicationIntelligence({ application }: Props) {
 											<span className="truncate font-medium text-sm">{item.label}</span>
 											<Badge variant="outline">{item.score}%</Badge>
 										</div>
-										<p className="mt-0.5 text-muted-foreground text-xs">{item.rationale}</p>
+										<p className="mt-0.5 text-ink-3 text-xs">{item.rationale}</p>
 									</div>
 								</div>
 							))
@@ -161,7 +161,7 @@ export function ApplicationIntelligence({ application }: Props) {
 					</div>
 
 					{analysis.recommendations.length > 0 && (
-						<div className="space-y-3 rounded-xl border bg-background p-3">
+						<div className="space-y-3 rounded-xl border bg-surface p-3">
 							<div className="font-medium text-sm">Create Targeted Resume Snapshot</div>
 							<div className="space-y-1.5">
 								<Label>Resume Name</Label>
@@ -177,7 +177,7 @@ export function ApplicationIntelligence({ application }: Props) {
 									showClear
 									onValueChange={(value) => setBaseResumeId(value ?? "")}
 								/>
-								<p className="text-muted-foreground text-xs">
+								<p className="text-ink-3 text-xs">
 									The base resume supplies its design, picture, and contact data. Selected Vault content is copied and
 									version-snapshotted.
 								</p>
