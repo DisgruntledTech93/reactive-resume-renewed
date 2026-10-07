@@ -273,7 +273,7 @@ function EntryMenu({ section, entry }: EntryMenuProps) {
 	const resume = useCurrentResume();
 	const queryClient = useQueryClient();
 	const { title } = describeEntry(section.type, entry);
-	const vaultType = section.type === "custom" ? null : (section.type as VaultItemType);
+	const vaultType = section.type === "cover-letter" ? null : (section.type as VaultItemType);
 	const saveToVault = useMutation(
 		orpc.vault.create.mutationOptions({
 			onSuccess: () => {
