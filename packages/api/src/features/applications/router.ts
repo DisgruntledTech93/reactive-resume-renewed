@@ -1,5 +1,6 @@
 import { aiRouter } from "./ai";
 import { crudRouter } from "./crud";
+import { applicationIntelligenceRouter } from "./intelligence";
 
 export const applicationsRouter = {
 	list: crudRouter.list,
@@ -20,4 +21,5 @@ export const applicationsRouter = {
 	stats: crudRouter.stats,
 	tags: crudRouter.tags,
 	ai: aiRouter,
+	intelligence: applicationIntelligenceRouter,
 };
