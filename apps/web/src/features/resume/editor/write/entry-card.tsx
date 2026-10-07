@@ -1,6 +1,7 @@
 import type { PageSettings } from "./entries";
 import type { Entry, WriteSection } from "./model";
 import type { MessageDescriptor } from "@lingui/core";
+import type { VaultItemType } from "@reactive-resume/schema/vault/data";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useDirection } from "@base-ui/react/direction-provider";
 import { useSortable } from "@dnd-kit/sortable";
@@ -10,6 +11,7 @@ import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { AnimatePresence, m } from "motion/react";
 import { useEffect, useMemo } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@reactive-resume/ui/components/badge";
 import { Collapsible, CollapsibleContent } from "@reactive-resume/ui/components/collapsible";
 import {
@@ -36,6 +38,7 @@ import { useSectionTitle } from "./section-row";
 import { useCurrentResume, useResumeStore, useUpdateResumeData } from "@/features/resume/builder/draft";
 import { D3, DRAG_SETTLE, EASE, EXIT } from "@/libs/motion";
 import { getCompatibleMoveTargets, getSourceSectionTitle, moveItem } from "@/libs/resume/move-item";
+import { orpc } from "@/libs/orpc/client";
 
 const DRAFT_HINTS: Record<string, MessageDescriptor> = {
 	company: msg`Appears on the page once it has a company.`,
@@ -268,6 +271,19 @@ type EntryMenuProps = { section: WriteSection; entry: Entry };
 /** Hide from page, Duplicate, Move to… and Delete. */
 function EntryMenu({ section, entry }: EntryMenuProps) {
 	const resume = useCurrentResume();
+	const queryClient = useQueryClient();
+	const { title } = describeEntry(section.type, entry);
+	const vaultType = section.type === "custom" ? null : (section.type as VaultItemType);
+	const saveToVault = useMutation(
+		orpc.vault.create.mutationOptions({
+			onSuccess: () => {
+				void queryClient.invalidateQueries();
+				toast.add({ type: "success", description: t`Saved to your Career Vault.` });
+			},
+			onError: (error) =>
+				toast.add({ type: "error", description: error.message || t`Couldn't save this entry to the Vault.` }),
+		}),
+	);
 	const updateResumeData = useUpdateResumeData();
 	const customSectionId = section.kind === "custom" ? section.id : undefined;
 	const moveTargets = useMemo(
@@ -319,6 +335,21 @@ function EntryMenu({ section, entry }: EntryMenuProps) {
 					<Icon name="content_copy" />
 					<Trans>Duplicate</Trans>
 				</DropdownMenuItem>
+				{vaultType && (
+					<DropdownMenuItem
+						disabled={saveToVault.isPending}
+						onClick={() =>
+							saveToVault.mutate({
+								type: vaultType,
+								label: title || "Untitled Vault Item",
+								content: structuredClone(entry) as never,
+							})
+						}
+					>
+						<Icon name="auto_awesome" />
+						<Trans>Save to Career Vault</Trans>
+					</DropdownMenuItem>
+				)}
 				<DropdownMenuSub>
 					<DropdownMenuSubTrigger>
 						<Icon name="arrow_forward" />
