@@ -1,0 +1,51 @@
+name: Renewed v6 Check
+
+on:
+  push:
+    branches: ["renewed-v6"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck schema
+        run: pnpm --filter @reactive-resume/schema typecheck
+
+      - name: Typecheck database
+        run: pnpm --filter @reactive-resume/db typecheck
+
+      - name: Typecheck API
+        run: pnpm --filter @reactive-resume/api typecheck
+
+      - name: Build web
+        run: pnpm --filter web build
+
+      - name: Typecheck web
+        run: pnpm --filter web typecheck
+
+      - name: Test Career Vault backend
+        run: pnpm --filter @reactive-resume/api test
