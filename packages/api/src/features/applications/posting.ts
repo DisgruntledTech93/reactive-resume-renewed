@@ -135,11 +135,11 @@ function readZohoJobPosting(html: string): PagePosting | null {
 		const remote = job.Remote_Job === true ? "Remote: Yes" : job.Remote_Job === false ? "Remote: No" : "";
 
 		const details = [
-			salary ? \`Salary: \${salary}\` : "",
+			salary ? `Salary: ${salary}` : "",
 			remote,
-			location ? \`Location: \${location}\` : "",
-			jobType ? \`Job type: \${jobType}\` : "",
-			experience ? \`Experience: \${experience}\` : "",
+			location ? `Location: ${location}` : "",
+			jobType ? `Job type: ${jobType}` : "",
+			experience ? `Experience: ${experience}` : "",
 			description ? cleanEmbeddedJobHtml(description) : "",
 		]
 			.filter(Boolean)
