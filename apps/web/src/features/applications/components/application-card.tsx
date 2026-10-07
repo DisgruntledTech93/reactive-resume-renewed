@@ -41,6 +41,12 @@ export function ApplicationCard({ application, onClick, withMenu = false, draggi
 				>
 					<span className="truncate text-sm font-semibold">{application.role}</span>
 					<span className="truncate text-xs text-ink-3">{application.company}</span>
+					{application.matchScore !== null && (
+						<span className="mt-1 inline-flex w-fit items-center gap-1 rounded-md border border-accent/30 bg-accent-soft px-1.5 py-0.5 text-[11px] font-medium text-accent-text">
+							<Icon name="target" size={13} />
+							{application.matchScore}% Vault match
+						</span>
+					)}
 				</button>
 				{withMenu && <ApplicationActionsMenu application={application} className="relative z-10 -me-1.5 -mt-1.5" />}
 			</div>
