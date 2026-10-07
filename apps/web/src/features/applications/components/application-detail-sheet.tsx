@@ -31,6 +31,7 @@ import { daysInStage } from "../next-step";
 import { getClosedReasonLabel, getNextStage, getStageColor, getStageLabel, PIPELINE } from "../stages";
 import { useApplicationActions, useInvalidateApplications } from "../use-application-actions";
 import { ApplicationNotes } from "./application-notes";
+import { ApplicationIntelligence } from "./application-intelligence";
 import { Activity } from "./detail/activity";
 import { CloseDialog } from "./detail/close-dialog";
 import { Contacts } from "./detail/contacts";
@@ -252,6 +253,7 @@ function Detail({ application, onEditDetails, onDeleted }: DetailProps) {
 				<NextStepCard application={application} onScheduleInterview={(entry) => setInterview({ open: true, entry })} />
 				<SentDocuments application={application} disabled={remove.isPending} />
 				<Facts application={application} locale={i18n.locale} />
+				<ApplicationIntelligence application={application} />
 				<Tags application={application} />
 				<ApplicationNotes application={application} />
 				<Activity application={application} onOpenInterview={(entry) => setInterview({ open: true, entry })} />
