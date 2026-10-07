@@ -172,7 +172,7 @@ export function TargetedResumeSheet({ open, onOpenChange }: Props) {
 					</div>
 				) : (
 					<div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 pb-4">
-						<div className="rounded-xl border bg-muted/30 p-3 text-sm">
+						<div className="rounded-xl border bg-sunken/40 p-3 text-sm">
 							<strong>{selected.length}</strong> {"blocks selected from"} <strong>{matches.length}</strong> {"matches."}
 						</div>
 						{grouped.map(([type, results]) => (
@@ -202,7 +202,7 @@ export function TargetedResumeSheet({ open, onOpenChange }: Props) {
 												: [...previous, result.item.id],
 										);
 									return (
-										<div key={result.item.id} className="flex w-full items-start gap-3 rounded-xl border p-3 hover:bg-muted/40">
+										<div key={result.item.id} className="flex w-full items-start gap-3 rounded-xl border p-3 hover:bg-hover">
 											<Checkbox
 												checked={selected.includes(result.item.id)}
 												onCheckedChange={toggleResult}
@@ -212,15 +212,15 @@ export function TargetedResumeSheet({ open, onOpenChange }: Props) {
 												<div className="min-w-0">
 													<div className="flex items-start justify-between gap-3">
 														<p className="font-medium text-sm">{result.item.label}</p>
-														<Badge variant={result.score >= 40 ? "default" : "outline"}>{result.score}%</Badge>
+														<Badge variant={result.score >= 40 ? "accent" : "outline"}>{result.score}%</Badge>
 													</div>
 													{getVaultContentPreview(result.item.content) && (
-														<p className="mt-1 line-clamp-2 text-muted-foreground text-xs">
+														<p className="mt-1 line-clamp-2 text-ink-3 text-xs">
 															{getVaultContentPreview(result.item.content)}
 														</p>
 													)}
 													{result.matchedKeywords.length > 0 && (
-														<p className="mt-2 text-muted-foreground text-xs">
+														<p className="mt-2 text-ink-3 text-xs">
 															{"Matched:"} {result.matchedKeywords.slice(0, 8).join(" · ")}
 														</p>
 													)}
