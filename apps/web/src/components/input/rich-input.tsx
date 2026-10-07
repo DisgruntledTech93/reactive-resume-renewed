@@ -14,8 +14,8 @@ export function RichInput({ value, onChange, label = "Rich text", className, dis
 			label={label}
 			value={value}
 			onChange={onChange}
-			className={className}
-			disabled={disabled}
+			{...(className !== undefined ? { className } : {})}
+			{...(disabled !== undefined ? { disabled } : {})}
 		/>
 	);
 }
