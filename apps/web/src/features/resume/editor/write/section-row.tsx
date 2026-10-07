@@ -1,5 +1,6 @@
 import type { WriteSection } from "./model";
 import type { SectionType } from "@reactive-resume/schema/resume/data";
+import type { VaultItemType } from "@reactive-resume/schema/vault/data";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -32,6 +33,7 @@ import { addEntryTo } from "./actions";
 import { countEntriesToCheck, getEntries, getSectionObject } from "./model";
 import { IconPicker } from "@/components/input/icon-picker";
 import { useCurrentBuilderResumeSelector, useResumeStore, useUpdateResumeData } from "@/features/resume/builder/draft";
+import { VaultSelectorSheet } from "@/features/vault/selector-sheet";
 import { usePrompt } from "@/hooks/use-confirm";
 import { DRAG_SETTLE } from "@/libs/motion";
 import { getSectionTitle } from "@/libs/resume/section";
@@ -177,6 +179,8 @@ function SectionMenu({ section, title, onMove }: SectionMenuProps) {
 	const settings = useCurrentBuilderResumeSelector((resume) => getSectionObject(resume.data, section) ?? null);
 	const locale = useCurrentBuilderResumeSelector((resume) => resume.data.metadata.page.locale);
 	const [iconPickerOpen, setIconPickerOpen] = useState(false);
+	const [vaultOpen, setVaultOpen] = useState(false);
+	const vaultType = section.type === "custom" ? null : (section.type as VaultItemType);
 	if (!settings) return null;
 
 	const edit = (mutate: (target: NonNullable<ReturnType<typeof getSectionObject>>) => void) =>
@@ -269,6 +273,12 @@ function SectionMenu({ section, title, onMove }: SectionMenuProps) {
 						<DropdownMenuItem onClick={() => addEntryTo(section)}>
 							<Icon name="add" />
 							<Trans>Add entry</Trans>
+						</DropdownMenuItem>
+					)}
+					{section.kind !== "summary" && vaultType && (
+						<DropdownMenuItem onClick={() => setVaultOpen(true)}>
+							<Icon name="auto_awesome" />
+							<Trans>Add from Career Vault</Trans>
 						</DropdownMenuItem>
 					)}
 					{canSort && (
@@ -387,6 +397,15 @@ function SectionMenu({ section, title, onMove }: SectionMenuProps) {
 			</DropdownMenu>
 
 			{/* The icon grid opens from the ⋯ button: an invisible trigger laid over it anchors the popover. */}
+			{vaultType && (
+				<VaultSelectorSheet
+					open={vaultOpen}
+					onOpenChange={setVaultOpen}
+					type={vaultType}
+					{...(section.kind === "custom" ? { customSectionId: section.id } : {})}
+				/>
+			)}
+
 			<IconPicker
 				value={settings.icon === "none" ? "" : settings.icon}
 				onChange={(icon) => {
