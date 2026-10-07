@@ -42,6 +42,45 @@ describe("readJobPosting", () => {
 			description: "Design calm tools.\nFigma",
 		});
 	});
+
+	it("reads embedded Zoho Recruit job data", () => {
+		const jobs = JSON.stringify([
+			{
+				Salary: "$50-80/hr",
+				Remote_Job: true,
+				Posting_Title: "Freelance WordPress Developer -US",
+				Job_Description:
+					'<p>This is a remote position.</p><p>Experience with Elementor, JetEngine, Wordfence, WPCode, and Gravity Forms.</p>',
+				Work_Experience: "1-3 years",
+				Job_Type: "Project Based",
+				Job_Opening_Name: "Freelance WordPress Developer -US",
+				City: null,
+				State: null,
+				Country: null,
+			},
+		]);
+		const encodedJobs = jobs.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+		const html = `
+			<html>
+				<head><title>Insight Therapy Solutions - Freelance WordPress Developer -US - Remote Job</title></head>
+				<body><script>var jobs = JSON.parse('${encodedJobs}');</script></body>
+			</html>
+		`;
+
+		const posting = readJobPosting(html);
+
+		expect(posting).toMatchObject({
+			role: "Freelance WordPress Developer -US",
+			location: "",
+		});
+		expect(posting?.description).toContain("Insight Therapy Solutions");
+		expect(posting?.description).toContain("Salary: $50-80/hr");
+		expect(posting?.description).toContain("Remote: Yes");
+		expect(posting?.description).toContain("Job type: Project Based");
+		expect(posting?.description).toContain("Experience: 1-3 years");
+		expect(posting?.description).toContain("Elementor");
+		expect(posting?.description).toContain("Wordfence");
+	});
 });
 
 describe("posting retrieval", () => {
