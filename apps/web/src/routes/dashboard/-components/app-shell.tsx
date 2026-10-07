@@ -23,7 +23,7 @@ import { UserDropdownMenu } from "@/features/user/dropdown-menu";
 import { orpc } from "@/libs/orpc/client";
 
 type NavItem = {
-	to: "/dashboard" | "/dashboard/applications" | "/dashboard/trash" | "/dashboard/settings";
+	to: "/dashboard" | "/dashboard/vault" | "/dashboard/applications" | "/dashboard/trash" | "/dashboard/settings";
 	icon: IconName;
 	label: string;
 	count?: number;
@@ -39,6 +39,11 @@ function useNavItems() {
 			icon: "description",
 			label: t`Documents`,
 			...(counts ? { count: counts.resume + counts.letter } : {}),
+		},
+		{
+			to: "/dashboard/vault",
+			icon: "auto_awesome",
+			label: t`Career Vault`,
 		},
 		{
 			to: "/dashboard/applications",
@@ -294,7 +299,7 @@ function MobileTabs() {
 	return (
 		<nav
 			aria-label={t`App`}
-			className="sticky bottom-0 z-30 grid grid-cols-4 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] [view-transition-name:app-nav]"
+			className="sticky bottom-0 z-30 grid grid-cols-5 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] [view-transition-name:app-nav]"
 		>
 			<Link
 				to="/dashboard"
@@ -303,6 +308,14 @@ function MobileTabs() {
 				className="relative flex min-h-[52px] flex-col items-center justify-center gap-0.5 transition-[scale] duration-quick ease-enter active:scale-[0.97]"
 			>
 				{tab("description", t`Documents`, isCurrent("/dashboard"))}
+			</Link>
+			<Link
+				to="/dashboard/vault"
+				aria-current={isCurrent("/dashboard/vault") ? "page" : undefined}
+				viewTransition={false}
+				className="relative flex min-h-[52px] flex-col items-center justify-center gap-0.5 transition-[scale] duration-quick ease-enter active:scale-[0.97]"
+			>
+				{tab("auto_awesome", t`Vault`, isCurrent("/dashboard/vault"))}
 			</Link>
 			<Link
 				to="/dashboard/applications"
