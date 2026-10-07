@@ -180,7 +180,7 @@ function SectionMenu({ section, title, onMove }: SectionMenuProps) {
 	const locale = useCurrentBuilderResumeSelector((resume) => resume.data.metadata.page.locale);
 	const [iconPickerOpen, setIconPickerOpen] = useState(false);
 	const [vaultOpen, setVaultOpen] = useState(false);
-	const vaultType = section.type === "custom" ? null : (section.type as VaultItemType);
+	const vaultType = section.type === "cover-letter" ? null : (section.type as VaultItemType);
 	if (!settings) return null;
 
 	const edit = (mutate: (target: NonNullable<ReturnType<typeof getSectionObject>>) => void) =>
