@@ -9,6 +9,7 @@ import { flagsRouter } from "../features/flags/router";
 import { resumeRouter } from "../features/resume/router";
 import { statisticsRouter } from "../features/statistics/router";
 import { storageRouter } from "../features/storage/router";
+import { vaultRouter } from "../features/vault/router";
 import { webAccessRouter } from "../features/web-access/router";
 
 export default {
@@ -24,4 +25,5 @@ export default {
 	statistics: statisticsRouter,
 	storage: storageRouter,
 	webAccess: webAccessRouter,
+	vault: vaultRouter,
 };
