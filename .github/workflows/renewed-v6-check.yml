@@ -5,6 +5,10 @@ on:
     branches: ["renewed-v6"]
   workflow_dispatch:
 
+concurrency:
+  group: renewed-v6-check-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
