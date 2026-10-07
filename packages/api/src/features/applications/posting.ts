@@ -133,8 +133,11 @@ function readZohoJobPosting(html: string): PagePosting | null {
 		const experience = stringValue("Work_Experience");
 		const description = stringValue("Job_Description");
 		const remote = job.Remote_Job === true ? "Remote: Yes" : job.Remote_Job === false ? "Remote: No" : "";
+		const pageTitleMatch = html.match(/<title[^>]*>([\\s\\S]*?)<\\/title>/i);
+		const pageTitle = pageTitleMatch?.[1] ? htmlToText(pageTitleMatch[1]) : "";
 
 		const details = [
+			pageTitle ? `Page title: ${pageTitle}` : "",
 			salary ? `Salary: ${salary}` : "",
 			remote,
 			location ? `Location: ${location}` : "",
