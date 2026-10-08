@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { produce } from "immer";
 import { customSectionItemDefinitionByType } from "@reactive-resume/schema/resume/data";
 import { defaultResumeData } from "@reactive-resume/schema/resume/default";
-import { CUSTOM_SECTION_TYPES, createEntry, moveSection } from "./model";
+import { CUSTOM_SECTION_TYPES, createEntry, getOutlineRows, moveSection } from "./model";
 
 const resume = (edit?: (data: ResumeData) => void) => {
 	const data = structuredClone(defaultResumeData);
@@ -43,6 +43,20 @@ describe("outline", () => {
 			moveSection(draft, "experience", { id: "education", page: 0, column: "main" }, "down"),
 		);
 		expect(down.metadata.layout.pages[0]?.main).toEqual(["summary", "education", "experience"]);
+	});
+
+
+	it("treats sidebar placements as main flow in one-column templates", () => {
+		const data = resume((draft) => {
+			draft.metadata.template = "onyx";
+			withEntries(draft, "experience", "education", "skills");
+		});
+
+		expect(getOutlineRows(data).map((row) => ({ id: row.id, column: row.column }))).toEqual([
+			{ id: "experience", column: "main" },
+			{ id: "education", column: "main" },
+			{ id: "skills", column: "main" },
+		]);
 	});
 
 	it("changes column when a section moves across the sidebar divider", () => {
