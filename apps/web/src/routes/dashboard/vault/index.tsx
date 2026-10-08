@@ -116,7 +116,7 @@ function RouteComponent() {
 	};
 
 	return (
-		<div className="space-y-4">
+		<div className="mx-auto grid w-full min-w-0 max-w-[1180px] content-start gap-5 px-8 py-8 max-sm:px-4 max-sm:py-5">
 			<DashboardHeader
 				icon={ArchiveIcon}
 				title={"Career Vault"}
