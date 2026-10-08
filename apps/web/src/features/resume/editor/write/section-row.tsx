@@ -278,7 +278,7 @@ function SectionMenu({ section, title, onMove }: SectionMenuProps) {
 					{section.kind !== "summary" && vaultType && (
 						<DropdownMenuItem onClick={() => setVaultOpen(true)}>
 							<Icon name="auto_awesome" />
-							<Trans>Add from Career Vault</Trans>
+							{"Add from Career Vault"}
 						</DropdownMenuItem>
 					)}
 					{canSort && (
