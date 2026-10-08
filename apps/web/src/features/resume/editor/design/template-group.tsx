@@ -46,6 +46,13 @@ function applyTemplate(template: Template) {
 	updateResumeData(
 		(draft) => {
 			draft.metadata.template = template;
+			if (templateLayouts[template].columns === 1) {
+				for (const page of draft.metadata.layout.pages) {
+					page.main = [...page.main, ...page.sidebar];
+					page.sidebar = [];
+					page.fullWidth = true;
+				}
+			}
 		},
 		{ newStep: true },
 	);
