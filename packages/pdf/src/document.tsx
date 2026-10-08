@@ -3,6 +3,7 @@ import type { SectionTitleResolver } from "./section-title";
 import type { ResolvedResumeRuntime } from "./semantic";
 import type { LayoutPage, ResumeData, Typography } from "@reactive-resume/schema/resume/data";
 import type { Template } from "@reactive-resume/schema/templates";
+import { templateLayouts } from "@reactive-resume/schema/templates";
 import type { Locale } from "@reactive-resume/utils/locale";
 import type { ComponentType } from "react";
 import { useMemo } from "react";
@@ -56,7 +57,26 @@ export const ResumeDocument = ({
 	// `resolvePdfFonts` widens `fontFamily` to `string | string[]` for CJK
 	// fallback (#2986); the cast carries that wider runtime value through
 	// `ResumeData` without changing the public schema.
-	const resumeData = useMemo(() => ({ ...data, metadata: { ...data.metadata, typography } }), [data, typography]);
+	const resumeData = useMemo(() => {
+		const metadata = { ...data.metadata, typography };
+		if (templateLayouts[template].columns !== 1) return { ...data, metadata };
+
+		return {
+			...data,
+			metadata: {
+				...metadata,
+				layout: {
+					...metadata.layout,
+					pages: metadata.layout.pages.map((page) => ({
+						...page,
+						fullWidth: true,
+						main: [...page.main, ...page.sidebar],
+						sidebar: [],
+					})),
+				},
+			},
+		};
+	}, [data, typography, template]);
 	const pageSize = getTemplatePageSize(resumeData.metadata.page.format);
 	const pageMinHeightStyle = getTemplatePageMinHeightStyle(resumeData.metadata.page.format);
 	const headerResumeData = useMemo(
