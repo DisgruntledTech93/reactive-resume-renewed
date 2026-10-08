@@ -70,12 +70,12 @@ export function NavigationCommandGroup() {
 
 				<CommandItem
 					disabled={!session}
-					keywords={[t`Career Vault`, t`Vault`, t`Career history`]}
+					keywords={["Career Vault", "Vault", "Career history"]}
 					value="navigation.vault"
 					onSelect={() => onNavigate("/dashboard/vault")}
 				>
 					<Icon name="auto_awesome" size={16} />
-					<Trans>Career Vault</Trans>
+					Career Vault
 				</CommandItem>
 
 				<CommandItem
