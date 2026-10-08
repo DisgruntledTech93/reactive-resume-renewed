@@ -43,7 +43,7 @@ function useNavItems() {
 		{
 			to: "/dashboard/vault",
 			icon: "auto_awesome",
-			label: t`Career Vault`,
+			label: "Career Vault",
 		},
 		{
 			to: "/dashboard/applications",
@@ -315,7 +315,7 @@ function MobileTabs() {
 				viewTransition={false}
 				className="relative flex min-h-[52px] flex-col items-center justify-center gap-0.5 transition-[scale] duration-quick ease-enter active:scale-[0.97]"
 			>
-				{tab("auto_awesome", t`Vault`, isCurrent("/dashboard/vault"))}
+				{tab("auto_awesome", "Vault", isCurrent("/dashboard/vault"))}
 			</Link>
 			<Link
 				to="/dashboard/applications"
