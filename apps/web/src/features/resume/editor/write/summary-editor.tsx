@@ -59,11 +59,11 @@ export function SummaryEditor({ locked }: { locked: boolean }) {
 						}
 					>
 						<Icon name="auto_awesome" />
-						<Trans>Save to Vault</Trans>
+						{"Save to Vault"}
 					</Button>
 					<Button variant="secondary" size="sm" onClick={() => setVaultOpen(true)}>
 						<Icon name="add" />
-						<Trans>Use Vault Summary</Trans>
+						{"Use Vault Summary"}
 					</Button>
 				</div>
 			)}
