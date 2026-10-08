@@ -8,6 +8,7 @@ import type {
 import type { WritableDraft } from "immer";
 import { sectionTypeSchema } from "@reactive-resume/schema/resume/data";
 import { EMPTY_RESUME_DATES } from "@reactive-resume/schema/resume/dates";
+import { templateLayouts } from "@reactive-resume/schema/templates";
 import { generateId, stripHtml } from "@reactive-resume/utils/string";
 
 type Data = ResumeData | WritableDraft<ResumeData>;
@@ -245,11 +246,14 @@ export function getOutlineRows(data: Data, recentlyAdded?: ReadonlySet<string>):
 	const rows: OutlineRow[] = [];
 	const placed = new Set<string>();
 
+	const oneColumn = templateLayouts[data.metadata.template].columns === 1;
 	data.metadata.layout.pages.forEach((page, pageIndex) => {
 		for (const column of ["main", "sidebar"] as const) {
 			for (const id of page[column]) {
 				placed.add(id);
-				if (isSectionInUse(data, id, recentlyAdded)) rows.push({ id, page: pageIndex, column });
+				if (isSectionInUse(data, id, recentlyAdded)) {
+					rows.push({ id, page: pageIndex, column: oneColumn ? "main" : column });
+				}
 			}
 		}
 	});
