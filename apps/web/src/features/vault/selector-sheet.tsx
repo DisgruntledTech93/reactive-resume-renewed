@@ -64,20 +64,38 @@ export function VaultSelectorSheet({ open, onOpenChange, type, customSectionId, 
 	const addSelected = () => {
 		const chosen = (items ?? []).filter((item) => selected.includes(item.id));
 		if (chosen.length === 0) return;
+
 		if (onAddItems) {
 			onAddItems(chosen);
-		} else {
-			updateResumeData((draft) => {
+			toast.success(
+				chosen.length === 1 ? "Added one Vault block to this resume." : `Added ${chosen.length} Vault blocks to this resume.`,
+			);
+			close();
+			return;
+		}
+
+		let added = 0;
+		updateResumeData(
+			(draft) => {
 				for (const item of chosen) {
 					const content = { ...structuredClone(item.content), id: generateId(), hidden: false };
-					if (type === "summary") draft.summary.content = (content as { content: string }).content;
-					else createSectionItem(draft, type as SectionType, content as Record<string, unknown>, customSectionId);
+					if (type === "summary") {
+						draft.summary.content = (content as { content: string }).content;
+						added += 1;
+					} else if (createSectionItem(draft, type as SectionType, content as Record<string, unknown>, customSectionId)) {
+						added += 1;
+					}
 				}
-			});
-		}
-		toast.success(
-			chosen.length === 1 ? `Added one Vault block to this resume.` : `Added ${chosen.length} Vault blocks to this resume.`,
+			},
+			{ newStep: true },
 		);
+
+		if (added === 0) {
+			toast.error("The selected Vault blocks could not be added to this section.");
+			return;
+		}
+
+		toast.success(added === 1 ? "Added one Vault block to this resume." : `Added ${added} Vault blocks to this resume.`);
 		close();
 	};
 
@@ -95,7 +113,7 @@ export function VaultSelectorSheet({ open, onOpenChange, type, customSectionId, 
 						{"Add from Career Vault"}
 					</SheetTitle>
 					<SheetDescription>
-						{`Select reusable ${VAULT_TYPE_LABELS[type].toLowerCase()}blocks for this resume.`}
+						{`Select reusable ${VAULT_TYPE_LABELS[type].toLowerCase()} blocks for this resume.`}
 					</SheetDescription>
 				</SheetHeader>
 
