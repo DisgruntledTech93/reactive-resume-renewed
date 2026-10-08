@@ -290,7 +290,7 @@ function collectCredentialParagraphs(lines: string[]) {
 			continue;
 		}
 
-		current = current ? \`\${current} \${line}\` : line;
+		current = current ? `${current} ${line}` : line;
 	}
 
 	flush();
@@ -334,7 +334,7 @@ function extractMixedCredentialCandidates(text: string): { text: string; candida
 				.replace(/,\s*(?:currently\s+)?in progress.*$/i, "")
 				.trim();
 			candidates.push(
-				candidate("education", school ? \`\${degree} — \${school}\` : degree, {
+				candidate("education", school ? `${degree} — ${school}` : degree, {
 					id: generateId(),
 					hidden: false,
 					school: school || "Imported Institution",
