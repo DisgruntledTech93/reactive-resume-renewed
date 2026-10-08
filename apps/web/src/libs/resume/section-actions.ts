@@ -5,13 +5,13 @@ export function createSectionItem(
 	type: SectionType,
 	content: Record<string, unknown>,
 	customSectionId?: string,
-) {
+): boolean {
 	const section = customSectionId
 		? data.customSections.find((candidate) => candidate.id === customSectionId)
-		: (data as unknown as Record<string, unknown>)[type];
+		: data.sections[type];
 
-	if (!section || typeof section !== "object" || !("items" in section)) return;
-	const items = (section as { items?: unknown }).items;
-	if (!Array.isArray(items)) return;
-	items.push(content);
+	if (!section || !Array.isArray(section.items)) return false;
+
+	(section.items as Record<string, unknown>[]).push(content);
+	return true;
 }
