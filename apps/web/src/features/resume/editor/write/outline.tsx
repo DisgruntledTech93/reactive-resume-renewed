@@ -3,12 +3,13 @@ import type { OutlineRow, WriteSection } from "./model";
 import type { DragEndEvent } from "@dnd-kit/core";
 import type { MessageDescriptor } from "@lingui/core";
 import type { CustomSectionType } from "@reactive-resume/schema/resume/data";
+import type { VaultItemType } from "@reactive-resume/schema/vault/data";
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
-import { Fragment, useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Icon } from "@reactive-resume/ui/components/icon";
 import { useEditorStore } from "../store";
 import { addEntryTo } from "./actions";
@@ -17,6 +18,7 @@ import { getEntries, getOutlineRows, getSectionKind, getSectionType, moveSection
 import { SectionRow } from "./section-row";
 import { SummaryEditor } from "./summary-editor";
 import { useCurrentBuilderResumeSelector, useUpdateResumeData } from "@/features/resume/builder/draft";
+import { VaultSelectorSheet } from "@/features/vault/selector-sheet";
 
 const ADD_LABELS: Record<CustomSectionType, MessageDescriptor> = {
 	summary: msg`Add text`,
@@ -139,7 +141,13 @@ function OutlineSection({ sectionId, locked, page, onMove }: OutlineSectionProps
 		() => (type ? { id: sectionId, kind: getSectionKind(sectionId), type } : null),
 		[sectionId, type],
 	);
+	const [vaultOpen, setVaultOpen] = useState(false);
 	if (!stableSection) return null;
+
+	const vaultType =
+		stableSection.kind === "summary" || stableSection.type === "cover-letter"
+			? null
+			: (stableSection.type as VaultItemType);
 
 	return (
 		<SectionRow section={stableSection} locked={locked} onMove={onMove}>
@@ -149,14 +157,34 @@ function OutlineSection({ sectionId, locked, page, onMove }: OutlineSectionProps
 				<>
 					<EntryList section={stableSection} locked={locked} page={page} />
 					{!locked && (
-						<button
-							type="button"
-							onClick={() => addEntryTo(stableSection)}
-							className="flex h-9 items-center gap-1.5 rounded-lg px-2 text-sm text-accent-text hover:bg-hover"
-						>
-							<Icon name="add" size={18} />
-							{i18n._(ADD_LABELS[stableSection.type])}
-						</button>
+						<div className="grid gap-1">
+							<button
+								type="button"
+								onClick={() => addEntryTo(stableSection)}
+								className="flex h-9 items-center gap-1.5 rounded-lg px-2 text-sm text-accent-text hover:bg-hover"
+							>
+								<Icon name="add" size={18} />
+								{i18n._(ADD_LABELS[stableSection.type])}
+							</button>
+							{vaultType && (
+								<button
+									type="button"
+									onClick={() => setVaultOpen(true)}
+									className="flex h-9 items-center gap-1.5 rounded-lg px-2 text-sm text-accent-text hover:bg-hover"
+								>
+									<Icon name="auto_awesome" size={18} />
+									{"Add from Career Vault"}
+								</button>
+							)}
+						</div>
+					)}
+					{vaultType && (
+						<VaultSelectorSheet
+							open={vaultOpen}
+							onOpenChange={setVaultOpen}
+							type={vaultType}
+							{...(stableSection.kind === "custom" ? { customSectionId: stableSection.id } : {})}
+						/>
 					)}
 				</>
 			)}
