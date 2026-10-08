@@ -6,6 +6,7 @@ import type {
 	VaultItemType,
 } from "@reactive-resume/schema/vault/data";
 import { inflateRawSync } from "node:zlib";
+import { parseResumeText } from "@reactive-resume/import/plain-text";
 import { parseReactiveResumeJSON } from "@reactive-resume/import/reactive-resume-json";
 import { parseVaultItemContent, vaultItemTypeSchema } from "@reactive-resume/schema/vault/data";
 import { generateId } from "@reactive-resume/utils/string";
@@ -17,20 +18,6 @@ const sectionTypes = vaultItemTypeSchema.options.filter((type): type is SectionT
 const ZIP_LOCAL_FILE_HEADER_SIGNATURE = 0x04034b50;
 const ZIP_CENTRAL_DIRECTORY_SIGNATURE = 0x02014b50;
 const ZIP_END_OF_CENTRAL_DIRECTORY_SIGNATURE = 0x06054b50;
-
-function escapeHtml(value: string): string {
-	return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
-function toHtml(lines: string[]): string {
-	const cleaned = lines.map((line) => line.trim()).filter(Boolean);
-	if (cleaned.length === 0) return "";
-	const bullets = cleaned.filter((line) => /^[-*•▪◦]/.test(line));
-	if (bullets.length >= Math.ceil(cleaned.length / 2)) {
-		return `<ul>${cleaned.map((line) => `<li>${escapeHtml(line.replace(/^[-*•▪◦]\s*/, ""))}</li>`).join("")}</ul>`;
-	}
-	return cleaned.map((line) => `<p>${escapeHtml(line)}</p>`).join("");
-}
 
 function inferMetadata(text: string) {
 	const keywords = extractDeterministicKeywords(text);
@@ -197,149 +184,291 @@ async function extractPdfText(data: Uint8Array): Promise<string> {
 	return pages.join("\n\n").trim();
 }
 
-const HEADINGS: Array<[RegExp, VaultItemType]> = [
-	[/^(professional\s+)?summary|profile|objective$/i, "summary"],
-	[/^(work\s+)?experience|employment(\s+history)?|professional\s+experience$/i, "experience"],
-	[/^education|academic(\s+background)?$/i, "education"],
-	[/^projects?|selected\s+projects$/i, "projects"],
-	[/^(technical\s+)?skills|competencies|technologies$/i, "skills"],
-	[/^certifications?|licenses?(\s+and\s+certifications)?$/i, "certifications"],
-];
 
-function splitSections(text: string): Map<VaultItemType, string[]> {
-	const sections = new Map<VaultItemType, string[]>();
-	let current: VaultItemType = "summary";
-	for (const rawLine of text.replace(/\r/g, "").split("\n")) {
-		const line = rawLine.trim();
-		const heading = HEADINGS.find(([pattern]) => pattern.test(line.replace(/:$/, "")));
-		if (heading) {
-			current = heading[1];
-			continue;
-		}
-		const values = sections.get(current) ?? [];
-		values.push(line);
-		sections.set(current, values);
-	}
-	return sections;
+const BULLET_PREFIX = /^[-*•▪◦]\s*/;
+const DEGREE_PATTERN =
+	/\b(?:b\.?\s?s\.?|bachelor(?:'s)?|m\.?\s?s\.?|master(?:'s)?|ph\.?\s?d\.?|doctorate|associate(?:'s)?(?:\s+degree)?)\b/i;
+
+function normalizeHeadingText(line: string) {
+	return line
+		.replace(/[:：]\s*$/, "")
+		.replace(/&/g, " and ")
+		.replace(/[^\p{L}\p{N}\s]/gu, " ")
+		.replace(/\s+/g, " ")
+		.trim()
+		.toLowerCase();
 }
 
-function structuredBlocks(lines: string[]): string[][] {
-	const joined = lines.join("\n").trim();
-	if (!joined) return [];
-	const blankBlocks = joined.split(/\n\s*\n+/).map((block) => block.split("\n").filter(Boolean));
-	if (blankBlocks.length > 1) return blankBlocks.filter((block) => block.length > 0);
-	const blocks: string[][] = [];
-	let current: string[] = [];
-	for (const line of lines.filter(Boolean)) {
-		if (/\b(19|20)\d{2}\b.*\b(19|20)\d{2}|\bpresent\b/i.test(line) && current.length >= 2) {
-			blocks.push(current);
-			current = [];
+function looksLikeResumeHeading(line: string) {
+	const trimmed = line.trim().replace(/[:：]\s*$/, "");
+	if (!trimmed || trimmed.length > 90 || /\d/.test(trimmed)) return false;
+	const letters = trimmed.replace(/[^\p{L}]/gu, "");
+	return letters.length >= 3 && letters === letters.toLocaleUpperCase() && letters !== letters.toLocaleLowerCase();
+}
+
+function isMixedCredentialsHeading(line: string) {
+	const heading = normalizeHeadingText(line);
+	return heading.includes("certification") && heading.includes("education");
+}
+
+function isTargetedAlignmentHeading(line: string) {
+	const heading = normalizeHeadingText(line);
+	return (
+		heading.includes("role alignment") ||
+		heading.includes("job alignment") ||
+		heading.includes("position alignment") ||
+		heading.includes("target role")
+	);
+}
+
+function normalizeVaultHeadings(text: string) {
+	const lines = text.replace(/\r\n?/g, "\n").split("\n");
+	const output: string[] = [];
+	let skippingTargeted = false;
+
+	for (const rawLine of lines) {
+		const line = rawLine.trim();
+		const heading = normalizeHeadingText(line);
+		const resumeHeading = looksLikeResumeHeading(line);
+
+		if (isTargetedAlignmentHeading(line)) {
+			skippingTargeted = true;
+			continue;
 		}
-		current.push(line);
+
+		if (skippingTargeted) {
+			if (!resumeHeading) continue;
+			skippingTargeted = false;
+		}
+
+		if (
+			heading === "relevant experience" ||
+			heading === "relevant professional experience" ||
+			heading === "leadership field service and earlier experience" ||
+			heading === "earlier professional experience"
+		) {
+			output.push("EXPERIENCE");
+			continue;
+		}
+
+		if (
+			heading === "technical tools and keywords" ||
+			heading === "technical tools" ||
+			heading === "tools and technologies" ||
+			heading === "technical competencies"
+		) {
+			output.push("SKILLS");
+			continue;
+		}
+
+		output.push(rawLine);
 	}
-	if (current.length > 0) blocks.push(current);
-	return blocks;
+
+	return output.join("\n");
+}
+
+function collectCredentialParagraphs(lines: string[]) {
+	const paragraphs: string[] = [];
+	let current = "";
+
+	const flush = () => {
+		const value = current.trim();
+		if (value) paragraphs.push(value);
+		current = "";
+	};
+
+	for (const rawLine of lines) {
+		const line = rawLine.trim();
+		if (!line) {
+			flush();
+			continue;
+		}
+
+		if (BULLET_PREFIX.test(line)) {
+			flush();
+			current = line.replace(BULLET_PREFIX, "").trim();
+			continue;
+		}
+
+		current = current ? \`\${current} \${line}\` : line;
+	}
+
+	flush();
+	return paragraphs.flatMap((paragraph) => paragraph.split(/\s*;\s*/).map((part) => part.trim()).filter(Boolean));
+}
+
+function extractMixedCredentialCandidates(text: string): { text: string; candidates: DraftCandidate[] } {
+	const lines = text.replace(/\r\n?/g, "\n").split("\n");
+	const output: string[] = [];
+	const mixedLines: string[] = [];
+	let inMixed = false;
+
+	for (const rawLine of lines) {
+		const line = rawLine.trim();
+
+		if (!inMixed && isMixedCredentialsHeading(line)) {
+			inMixed = true;
+			continue;
+		}
+
+		if (inMixed && looksLikeResumeHeading(line)) {
+			inMixed = false;
+			output.push(rawLine);
+			continue;
+		}
+
+		if (inMixed) mixedLines.push(rawLine);
+		else output.push(rawLine);
+	}
+
+	const candidates: DraftCandidate[] = [];
+	for (const paragraph of collectCredentialParagraphs(mixedLines)) {
+		const cleaned = paragraph.replace(/\s+/g, " ").replace(/\.$/, "").trim();
+		if (!cleaned) continue;
+
+		if (DEGREE_PATTERN.test(cleaned) && /university|college|school/i.test(cleaned)) {
+			const parts = cleaned.split(/\s+-\s+/);
+			const degree = (parts.shift() ?? cleaned).trim();
+			const school = parts
+				.join(" - ")
+				.replace(/,\s*(?:currently\s+)?in progress.*$/i, "")
+				.trim();
+			candidates.push(
+				candidate("education", school ? \`\${degree} — \${school}\` : degree, {
+					id: generateId(),
+					hidden: false,
+					school: school || "Imported Institution",
+					degree,
+					area: "",
+					grade: "",
+					location: "",
+					period: /in progress/i.test(cleaned) ? "In progress" : "",
+					website: { url: "", label: "", inlineLink: false },
+					description: "",
+				}),
+			);
+			continue;
+		}
+
+		const years = cleaned.match(/\b(?:19|20)\d{2}\b/g);
+		const date = years?.at(-1) ?? "";
+		const parts = cleaned.split(/\s+-\s+/);
+		let title = cleaned
+			.replace(/,\s*(?:active through|valid through|expires?|in progress).*$/i, "")
+			.replace(/,\s*(?:19|20)\d{2}\.?$/i, "")
+			.trim();
+		let issuer = "";
+
+		const lastPart = parts.at(-1) ?? "";
+		if (parts.length > 1 && /university|college|school|learning|institute|academy/i.test(lastPart)) {
+			title = parts.slice(0, -1).join(" - ").trim();
+			issuer = lastPart
+				.replace(/,\s*(?:19|20)\d{2}\.?$/i, "")
+				.replace(/\s+course\s+in\s+progress.*$/i, "")
+				.trim();
+		} else if (parts.length > 1 && /^[A-Z0-9-]{6,}/.test(lastPart)) {
+			title = parts.slice(0, -1).join(" - ").trim();
+		}
+
+		candidates.push(
+			candidate("certifications", title || cleaned, {
+				id: generateId(),
+				hidden: false,
+				title: title || cleaned,
+				issuer,
+				date,
+				website: { url: "", label: "", inlineLink: false },
+				description: cleaned === title ? "" : cleaned,
+			}),
+		);
+	}
+
+	return { text: output.join("\n"), candidates };
+}
+
+function repairImportedExperience(data: ResumeData) {
+	for (const item of data.sections.experience.items) {
+		if (item.position.trim() || !item.company.trim()) continue;
+
+		const paragraph = /^<p>(.*?)<\/p>/.exec(item.description);
+		if (!paragraph?.[1]) continue;
+
+		const organizationLine = paragraph[1]
+			.replace(/&amp;/gi, "&")
+			.replace(/&nbsp;/gi, " ")
+			.replace(/&#39;/gi, "'")
+			.replace(/&quot;/gi, '"')
+			.trim();
+		if (!organizationLine || /[.!?]$/.test(organizationLine)) continue;
+
+		const [organization = "", detail = ""] = organizationLine.split(/\s*\|\s*/, 2);
+		if (!organization.trim()) continue;
+
+		item.position = item.company;
+		item.company = organization.trim();
+
+		const possibleLocation = detail.trim();
+		if (
+			possibleLocation &&
+			!/(university|college|school|training|client|platform)/i.test(possibleLocation) &&
+			(possibleLocation.split(/\s+/).length <= 5 || /,\s*[A-Z]{2}\b/.test(possibleLocation))
+		) {
+			item.location = possibleLocation;
+		}
+
+		item.description = item.description.slice(paragraph[0].length);
+	}
+}
+
+function collapseImportedSkills(items: DraftCandidate[]): DraftCandidate[] {
+	const skillItems = items.filter((item) => item.type === "skills");
+	if (skillItems.length <= 1) return items;
+
+	const keywords = [
+		...new Set(
+			skillItems.flatMap((item) => {
+				const content = item.content as { name?: string; keywords?: string[] };
+				return [content.name ?? "", ...(content.keywords ?? [])].map((value) => value.trim()).filter(Boolean);
+			}),
+		),
+	].slice(0, 100);
+
+	const combined = candidate("skills", "Imported Skills", {
+		id: generateId(),
+		hidden: false,
+		icon: "",
+		iconColor: "",
+		name: "Core Skills",
+		proficiency: "",
+		level: 0,
+		keywords,
+	});
+
+	const firstSkillIndex = items.findIndex((item) => item.type === "skills");
+	const withoutSkills = items.filter((item) => item.type !== "skills");
+	withoutSkills.splice(Math.max(0, firstSkillIndex), 0, combined);
+	return withoutSkills;
 }
 
 export function plainTextToCandidates(text: string): DraftCandidate[] {
-	const sections = splitSections(text);
-	const candidates: DraftCandidate[] = [];
-	const summary = (sections.get("summary") ?? []).filter(Boolean);
-	if (summary.length > 0) {
-		candidates.push(
-			candidate("summary", "Professional Summary", { id: generateId(), hidden: false, content: toHtml(summary) }),
-		);
-	}
-	for (const block of structuredBlocks(sections.get("experience") ?? [])) {
-		const periodIndex = block.findIndex((line) => /\b(19|20)\d{2}\b|\bpresent\b/i.test(line));
-		const first = block[0] ?? "Imported Experience";
-		const second = block[1] ?? "";
-		const company = first.includes("|") ? first.split("|").at(-1)?.trim() || first : first;
-		const position = first.includes("|") ? first.split("|")[0]?.trim() || "" : second;
-		const descriptionLines = block.filter((_, index) => index > 1 && index !== periodIndex);
-		candidates.push(
-			candidate("experience", `${position || company}${position && company ? ` at ${company}` : ""}`, {
-				id: generateId(),
-				hidden: false,
-				company,
-				position,
-				location: "",
-				period: periodIndex >= 0 ? (block[periodIndex] ?? "") : "",
-				website: { url: "", label: "", inlineLink: false },
-				description: toHtml(descriptionLines),
-				roles: [],
-			}),
-		);
-	}
-	for (const block of structuredBlocks(sections.get("education") ?? [])) {
-		candidates.push(
-			candidate("education", block[1] || block[0] || "Education", {
-				id: generateId(),
-				hidden: false,
-				school: block[0] || "Imported Institution",
-				degree: block[1] || "",
-				area: "",
-				grade: "",
-				location: "",
-				period: block.find((line) => /\b(19|20)\d{2}\b/.test(line)) ?? "",
-				website: { url: "", label: "", inlineLink: false },
-				description: toHtml(block.slice(2)),
-			}),
-		);
-	}
-	for (const block of structuredBlocks(sections.get("projects") ?? [])) {
-		candidates.push(
-			candidate("projects", block[0] || "Imported Project", {
-				id: generateId(),
-				hidden: false,
-				name: block[0] || "Imported Project",
-				period: block.find((line) => /\b(19|20)\d{2}\b/.test(line)) ?? "",
-				website: { url: "", label: "", inlineLink: false },
-				description: toHtml(block.slice(1)),
-			}),
-		);
-	}
-	const skillLines = (sections.get("skills") ?? []).filter(Boolean);
-	if (skillLines.length > 0) {
-		const keywords = skillLines
-			.flatMap((line) => line.replace(/^[-*•▪◦]\s*/, "").split(/[,;|]/))
-			.map((value) => value.trim())
-			.filter(Boolean);
-		candidates.push(
-			candidate("skills", "Imported Skills", {
-				id: generateId(),
-				hidden: false,
-				icon: "",
-				iconColor: "",
-				name: "Core Skills",
-				proficiency: "",
-				level: 0,
-				keywords: [...new Set(keywords)].slice(0, 100),
-			}),
-		);
-	}
-	for (const line of (sections.get("certifications") ?? []).filter(Boolean)) {
-		candidates.push(
-			candidate("certifications", line.replace(/^[-*•▪◦]\s*/, ""), {
-				id: generateId(),
-				hidden: false,
-				title: line.replace(/^[-*•▪◦]\s*/, ""),
-				issuer: "",
-				date: "",
-				website: { url: "", label: "", inlineLink: false },
-				description: "",
-			}),
-		);
-	}
+	const mixed = extractMixedCredentialCandidates(text);
+	const normalized = normalizeVaultHeadings(mixed.text);
+	const data = parseResumeText(normalized);
+	repairImportedExperience(data);
+
+	const parsed = collapseImportedSkills(resumeDataToCandidates(data));
+	const candidates = [...parsed, ...mixed.candidates];
+
 	if (candidates.length === 0 && text.trim()) {
-		candidates.push(
+		return [
 			candidate("summary", "Imported Resume Content", {
 				id: generateId(),
 				hidden: false,
-				content: toHtml(text.split("\n")),
+				content: text.trim(),
 			}),
-		);
+		];
 	}
+
 	return candidates;
 }
 
