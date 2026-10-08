@@ -347,7 +347,7 @@ function EntryMenu({ section, entry }: EntryMenuProps) {
 						}
 					>
 						<Icon name="auto_awesome" />
-						<Trans>Save to Career Vault</Trans>
+						{"Save to Career Vault"}
 					</DropdownMenuItem>
 				)}
 				<DropdownMenuSub>
